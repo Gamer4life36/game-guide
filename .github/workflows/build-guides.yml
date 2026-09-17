@@ -1,0 +1,65 @@
+name: Build guide data
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours
+  workflow_dispatch:
+    inputs:
+      minutes:
+        description: "Minutes to spend building guide indexes"
+        default: "320"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-guides
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore published data
+        run: |
+          mkdir -p data prev
+          if git ls-remote --exit-code --heads origin data > /dev/null; then
+            git fetch --depth 1 origin data
+            git archive FETCH_HEAD | tar -x -C prev
+            python publish.py unpack prev
+          fi
+
+      - name: Restore download cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            data/catalog_parts
+            data/cache
+          key: guide-cache-${{ github.run_id }}
+          restore-keys: guide-cache-
+
+      - name: Build
+        env:
+          BUILD_MINUTES: ${{ inputs.minutes || '320' }}
+        run: python ci.py --minutes "$BUILD_MINUTES"
+
+      - name: Publish to the data branch
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python publish.py pack out
+          cd out
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Guide data $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -q -f "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" data

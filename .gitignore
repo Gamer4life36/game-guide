@@ -1,0 +1,7 @@
+# Runtime data: caches, downloaded images, browser profiles, settings, catalog, guide indexes
+data/
+drafts/
+__pycache__/
+*.pyc
+*.log
+*.tmp

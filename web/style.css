@@ -1,0 +1,370 @@
+:root {
+  --bg: #0f1014;
+  --surface: #16171d;
+  --card: #1c1e25;
+  --card-hi: #23262f;
+  --border: #2a2d37;
+  --fg: #eceef3;
+  --muted: #8b8f9c;
+  --faint: #5b5f6b;
+  --accent: #6c7bff;
+  --accent-2: #9b6cff;
+  --good: #3ddc97;
+  --warn: #ffb547;
+  --bad: #ff5c72;
+  --radius: 14px;
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font); }
+button, input, select, textarea { font: inherit; color: inherit; }
+[hidden] { display: none !important; }
+.spacer { flex: 1; }
+.muted { color: var(--muted); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2f323d; border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: #454957; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- top bar ---------- */
+.topbar { height: 58px; display: flex; align-items: center; gap: 14px; padding: 0 18px;
+  background: linear-gradient(180deg, #14151b, #111217); border-bottom: 1px solid var(--border); }
+.brand { display: flex; align-items: center; gap: 10px; background: none; border: 0; cursor: pointer;
+  font-weight: 650; font-size: 17px; padding: 6px 8px; border-radius: 10px; }
+.brand:hover { background: var(--card); }
+.logo { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; font-size: 17px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 16px #6c7bff55; }
+.crumb { color: var(--muted); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumb b { color: var(--fg); font-weight: 600; }
+.gamesearch { position: relative; width: 340px; }
+.gamesearch input, .wikisearch input { width: 100%; background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; padding: 8px 16px; outline: none; transition: border-color .15s; }
+.gamesearch input:focus, .wikisearch input:focus { border-color: var(--accent); }
+.dropdown { position: absolute; top: 44px; right: 0; width: 100%; max-height: 440px; overflow: auto; z-index: 20;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px #000a; padding: 6px; }
+.dd-item { display: flex; gap: 10px; align-items: center; padding: 6px; border-radius: 8px; cursor: pointer; }
+.dd-item:hover, .dd-item.active { background: var(--card-hi); }
+.dd-item img { width: 92px; height: 34px; object-fit: cover; border-radius: 5px; background: #0003; }
+
+/* ---------- split layout ---------- */
+.split { display: flex; height: calc(100% - 58px); }
+.guide { flex: 0 0 60%; min-width: 380px; overflow: hidden; display: flex; }
+.guide .view { flex: 1; overflow: auto; }
+.divider { width: 6px; cursor: col-resize; background: var(--border); opacity: .35; transition: opacity .15s; }
+.divider:hover, .divider.dragging { opacity: 1; background: var(--accent); }
+.chat { flex: 1; min-width: 340px; display: flex; flex-direction: column; background: var(--surface); }
+
+/* ---------- library ---------- */
+#libraryView { padding: 28px 32px 40px; }
+.hero h1 { margin: 0 0 4px; font-size: 28px; letter-spacing: -.3px; }
+.hero p { margin: 0 0 18px; color: var(--muted); }
+.shelf-title { font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 26px 0 12px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.gamecard { position: relative; border-radius: var(--radius); overflow: hidden; cursor: pointer; background: var(--card);
+  border: 1px solid var(--border); transition: transform .15s, border-color .15s, box-shadow .15s; }
+.gamecard:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: 0 12px 30px #0008; }
+.gamecard .art { aspect-ratio: 460 / 215; width: 100%; display: block; object-fit: cover;
+  background: linear-gradient(135deg, #252836, #1a1c24); }
+.gamecard .name { padding: 10px 12px 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gamecard .noart { aspect-ratio: 460/215; display: grid; place-items: center; font-size: 30px; color: var(--faint);
+  background: linear-gradient(135deg, #252836, #1a1c24); }
+
+/* ---------- game view ---------- */
+#gameView { display: flex; flex-direction: column; overflow: hidden; }
+.gamehead { position: relative; min-height: 118px; display: flex; align-items: flex-end; padding: 18px 26px;
+  background-size: cover; background-position: center 30%; }
+.gamehead::before { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, #0f1014f2 30%, #0f1014a0 70%, #0f101480), linear-gradient(0deg, #0f1014 0%, transparent 60%); }
+.gamehead > * { position: relative; }
+.gamehead h1 { margin: 0; font-size: 26px; letter-spacing: -.3px; }
+.gamehead .meta { color: var(--muted); font-size: 13px; }
+.gamehead .actions { margin-left: auto; display: flex; gap: 8px; }
+.sourcebar { display: flex; align-items: center; gap: 12px; padding: 10px 22px; border-bottom: 1px solid var(--border);
+  background: var(--bg); }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.tab { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 5px 13px;
+  cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.tab:hover { border-color: #444857; }
+.tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tab .dot { width: 7px; height: 7px; border-radius: 50%; }
+.tab small { opacity: .7; }
+.kind-wikigg .dot { background: #58c4dc; } .kind-fandom .dot { background: #fa005a; } .kind-wiki .dot { background: #b58cff; }
+.kind-pcgw .dot { background: #ffb547; } .kind-wikipedia .dot { background: #d7dae3; } .kind-steam .dot { background: #66c0f4; }
+.wikisearch { width: 260px; }
+.reader { flex: 1; display: flex; overflow: hidden; }
+.sidebar { width: 260px; flex-shrink: 0; overflow: auto; padding: 14px 8px 20px 14px; border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, #121318, var(--bg)); }
+.toc { margin-top: 6px; }
+.toc a { display: block; padding: 5px 10px; border-radius: 8px; color: var(--muted); text-decoration: none; font-size: 13.5px;
+  cursor: pointer; line-height: 1.3; }
+.toc a:hover { background: var(--card); color: var(--fg); }
+.toc .toc-title { font-size: 11.5px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--faint); padding: 4px 10px 8px; }
+.page { flex: 1; overflow: auto; padding: 20px 34px 60px; scroll-behavior: smooth; }
+
+/* ---------- missions sidebar ---------- */
+.missions { padding-bottom: 12px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.side-title { display: flex; align-items: center; gap: 8px; font-size: 11.5px; letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--faint); padding: 4px 8px 6px; }
+.side-title .count { margin-left: auto; letter-spacing: 0; text-transform: none; background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; padding: 0 8px; font-size: 11px; color: var(--muted); }
+.side-note { font-size: 11.5px; color: var(--faint); padding: 0 8px 8px; }
+.side-note a { color: var(--muted); cursor: pointer; text-decoration: underline dotted; }
+.mgroup { margin: 2px 0; }
+.mgroup summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 6px 8px;
+  border-radius: 8px; font-size: 13px; font-weight: 600; color: #d3d6df; user-select: none; }
+.mgroup summary::-webkit-details-marker { display: none; }
+.mgroup summary::before { content: "▸"; color: var(--faint); transition: transform .15s; font-size: 11px; }
+.mgroup[open] summary::before { transform: rotate(90deg); }
+.mgroup summary:hover { background: var(--card); }
+.mgroup summary small { margin-left: auto; color: var(--faint); font-weight: 400; }
+.mlist { list-style: none; margin: 0 0 6px; padding: 0 0 0 6px; counter-reset: m; }
+.mlist li { }
+.mlist a { display: flex; gap: 8px; align-items: baseline; padding: 4px 8px; border-radius: 7px; color: var(--muted);
+  font-size: 13px; line-height: 1.3; cursor: pointer; text-decoration: none; }
+.mlist a::before { content: attr(data-n); min-width: 20px; text-align: right; font-size: 11px; color: var(--faint);
+  font-variant-numeric: tabular-nums; }
+.mlist a:hover { background: var(--card); color: var(--fg); }
+.mlist a.active { background: #6c7bff26; color: #fff; box-shadow: inset 2px 0 0 var(--accent); }
+.mlist a.active::before { color: var(--accent); }
+.side-empty { font-size: 12.5px; color: var(--faint); padding: 2px 8px 6px; line-height: 1.4; }
+.side-loading { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--muted); padding: 4px 8px; }
+.side-loading .spinner { width: 13px; height: 13px; border-width: 2px; margin: 0; }
+
+/* ---------- steam guides ---------- */
+.guidelist { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+.wiki a.guidecard { display: flex; gap: 12px; padding: 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--card);
+  color: var(--fg); border-bottom: 1px solid var(--border); transition: border-color .15s, transform .15s; }
+.wiki a.guidecard:hover { border-color: var(--accent); transform: translateY(-2px); color: var(--fg); }
+.guidecard img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; flex-shrink: 0; background: #0005; }
+.guidecard span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.guidecard b { font-size: 14px; line-height: 1.3; }
+.guidecard .stars { color: var(--warn); letter-spacing: 1px; font-size: 12px; }
+.guidecard em { font-style: normal; color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.guidemeta { color: var(--muted); font-size: 13px; }
+.kind-steamguides .dot { background: #a4d007; }
+
+/* ---------- wiki content ---------- */
+.pagehead { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+.pagehead h1 { margin: 0; font-size: 30px; letter-spacing: -.4px; line-height: 1.2; }
+.pagemeta { color: var(--muted); font-size: 13px; margin-bottom: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--card);
+  border: 1px solid var(--border); font-size: 12px; }
+.wiki { max-width: 900px; }
+.wiki h2 { font-size: 22px; margin: 30px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.wiki h3 { font-size: 18px; margin: 22px 0 8px; }
+.wiki h4 { font-size: 15.5px; margin: 16px 0 6px; color: #d6d9e3; }
+.wiki p { margin: 8px 0 12px; }
+.wiki a { color: #9aa6ff; text-decoration: none; border-bottom: 1px dotted #9aa6ff66; cursor: pointer; }
+.wiki a:hover { color: #c2c9ff; }
+.wiki img { max-width: 100%; height: auto; border-radius: 6px; vertical-align: middle; }
+.wiki table { border-collapse: collapse; margin: 12px 0; font-size: 14px; background: var(--card); border-radius: 10px;
+  overflow: hidden; display: block; max-width: 100%; overflow-x: auto; }
+.wiki th, .wiki td { border: 1px solid var(--border); padding: 6px 10px; vertical-align: top; text-align: left; }
+.wiki th { background: #22252e; color: #dfe2ea; }
+.wiki .infobox, .wiki .portable-infobox, .wiki aside, .wiki [class*="infobox"] { float: right; clear: right; width: 290px;
+  margin: 0 0 16px 22px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;
+  font-size: 13.5px; display: block; }
+.wiki aside h2, .wiki [class*="infobox"] h2 { font-size: 16px; margin: 4px 0 8px; border: 0; text-align: center; }
+.wiki aside h3 { font-size: 12px; margin: 6px 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.wiki aside section, .wiki aside div { margin: 2px 0; }
+.wiki aside figure { margin: 0 0 8px; text-align: center; }
+.wiki ul, .wiki ol { padding-left: 22px; }
+.wiki li { margin: 3px 0; }
+.wiki blockquote { border-left: 3px solid var(--accent); margin: 12px 0; padding: 4px 14px; color: #cfd3de; background: #1a1c24; }
+.wiki pre, .wiki code { background: #0b0c10; border-radius: 6px; padding: 1px 6px; font-family: Consolas, monospace; font-size: 13px; }
+.wiki pre { padding: 10px 14px; overflow-x: auto; }
+.wiki .gallery, .wiki [class*="gallery"] { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; }
+.wiki .gallery img { width: 220px; }
+.wiki figure { margin: 10px 0; }
+.wiki figcaption { color: var(--muted); font-size: 13px; }
+.wiki hr { border: 0; border-top: 1px solid var(--border); }
+.attribution { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--faint); font-size: 12.5px; clear: both; }
+.attribution a { color: var(--muted); cursor: pointer; }
+
+.results .hit { padding: 12px 14px; border-radius: 12px; cursor: pointer; border: 1px solid transparent; margin-bottom: 4px; }
+.results .hit:hover { background: var(--card); border-color: var(--border); }
+.results .hit b { font-size: 16px; }
+.results .hit div { color: var(--muted); font-size: 13.5px; }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+.loading { padding: 50px; text-align: center; color: var(--muted); }
+.spinner { width: 28px; height: 28px; border: 3px solid #2a2d37; border-top-color: var(--accent); border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn { background: var(--card-hi); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; cursor: pointer;
+  font-size: 13px; white-space: nowrap; }
+.btn:hover { border-color: #4a4e5d; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.iconbtn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.iconbtn:hover { border-color: var(--accent); }
+
+/* ---------- chat ---------- */
+.chathead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.chattitle { font-weight: 650; font-size: 16px; }
+.chatsub { color: var(--muted); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+#modelSelect { background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px; outline: none; max-width: 190px; }
+.messages { flex: 1; overflow: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 14px; }
+.welcome { margin: auto; text-align: center; max-width: 330px; color: var(--muted); }
+.welcome h3 { color: var(--fg); margin: 8px 0 6px; }
+.bigicon { width: 56px; height: 56px; margin: 0 auto; border-radius: 16px; display: grid; place-items: center; font-size: 26px;
+  color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 10px 30px #6c7bff44; }
+.msg { max-width: 94%; }
+.msg.user { align-self: flex-end; background: var(--accent); color: #fff; padding: 9px 14px; border-radius: 16px 16px 4px 16px; white-space: pre-wrap; }
+.msg.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--border); padding: 12px 15px; border-radius: 16px 16px 16px 4px; }
+.msg.bot p { margin: 0 0 8px; } .msg.bot p:last-child { margin-bottom: 0; }
+.msg.bot ul, .msg.bot ol { margin: 4px 0 8px; padding-left: 20px; }
+.msg.bot h4 { margin: 10px 0 4px; font-size: 14.5px; }
+.msg.bot code { background: #0b0c10; padding: 1px 5px; border-radius: 5px; font-size: 13px; }
+.cite { display: inline-block; font-size: 11px; font-weight: 700; background: #6c7bff33; color: #b9c0ff; border-radius: 6px;
+  padding: 0 5px; margin: 0 1px; cursor: pointer; vertical-align: 1px; }
+.cite:hover { background: var(--accent); color: #fff; }
+.status { color: var(--muted); font-size: 13px; display: flex; align-items: center; gap: 8px; }
+.status .spinner { width: 14px; height: 14px; border-width: 2px; margin: 0; }
+.srclist { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.src { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; padding: 3px 9px; border-radius: 999px;
+  background: #13141a; border: 1px solid var(--border); cursor: pointer; max-width: 100%; }
+.src:hover { border-color: var(--accent); }
+.src b { color: #b9c0ff; }
+.src span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 230px; }
+.src .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.errmsg { color: var(--bad); }
+.suggestions { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 16px 8px; }
+.chip { font-size: 12.5px; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.chip:hover { border-color: var(--accent); }
+.composer { display: flex; gap: 8px; align-items: flex-end; margin: 4px 14px 14px; padding: 8px 8px 8px 14px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px; transition: border-color .15s; }
+.composer:focus-within { border-color: var(--accent); }
+.composer textarea { flex: 1; background: none; border: 0; outline: none; resize: none; max-height: 160px; padding: 6px 0; }
+.send { width: 38px; height: 38px; border-radius: 50%; border: 0; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2)); font-size: 15px; }
+.send:disabled { opacity: .35; cursor: default; }
+
+/* ---------- modal ---------- */
+.modal { position: fixed; inset: 0; background: #0009; display: grid; place-items: center; z-index: 50; }
+.modalcard { width: 460px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px 22px; box-shadow: 0 20px 60px #000c; }
+.modalcard h3 { margin: 0 0 6px; }
+.modalcard p { color: var(--muted); margin: 0 0 12px; font-size: 14px; }
+.modalcard input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; outline: none; }
+.modalcard input:focus { border-color: var(--accent); }
+.modalerr { color: var(--bad); font-size: 13px; min-height: 20px; margin: 6px 0; }
+.row { display: flex; gap: 8px; align-items: center; }
+
+/* missions: walkthrough links, quests seen in the save, web guide cards */
+.mgroup-open { display: block; margin: -2px 0 4px 26px; font-size: 11.5px; color: var(--accent); cursor: pointer; }
+.mgroup-open:hover { text-decoration: underline; }
+.mlist li.seen a::after { content: "●"; margin-left: auto; color: #6fcf97; font-size: 9px; align-self: center; }
+.kind-web .dot { background: #4fb3ff; }
+.wiki a.guidecard.nothumb { grid-template-columns: 1fr; }
+
+.msearch { padding: 4px 4px 8px; }
+.msearch input { width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--card); color: var(--fg); font: inherit; font-size: 13px; outline: none; }
+.msearch input:focus { border-color: var(--accent); }
+.mlist li[hidden], .mgroup[hidden] { display: none; }
+
+#missionNone { padding: 4px 10px 8px; font-size: 12px; line-height: 1.4; }
+#missionNone .askai { display: block; margin-top: 4px; color: var(--accent); cursor: pointer; }
+#missionNone .askai:hover { text-decoration: underline; }
+.mlist li.textmatch a { font-style: italic; }
+
+.mlist li { position: relative; }
+.mlist .mname { flex: 1; min-width: 0; }
+.mlist a { flex-wrap: wrap; }
+.mlist .morig { flex-basis: 100%; padding-left: 28px; font-size: 11px; color: var(--faint); font-style: normal; }
+.mrename { position: absolute; right: 2px; top: 3px; display: none; border: 0; border-radius: 6px; padding: 1px 6px;
+  background: var(--card); color: var(--muted); cursor: pointer; font-size: 12px; }
+.mlist li:hover .mrename { display: block; }
+.mrename:hover { color: var(--fg); background: var(--accent); }
+.localgroup summary { color: var(--muted); font-style: italic; }
+
+/* ---------- mission references ---------- */
+.refsbtn { margin-left: auto; border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 999px;
+  padding: 2px 9px; font: inherit; font-size: 11px; letter-spacing: 0; text-transform: none; cursor: pointer; }
+.refsbtn:hover { color: var(--fg); border-color: var(--accent); }
+.side-title .count + .refsbtn { margin-left: auto; }
+.mrefs { margin: 18px 0 14px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 12px; background: var(--card); }
+.mrefs-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.mrefs-head span { font-size: 11.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); }
+.mrefs-head b { font-size: 15px; }
+.mrefs-head small { color: var(--faint); }
+.mrefs-label { margin: 10px 0 6px; font-size: 11.5px; color: var(--faint); }
+.mrefs-shots { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.mrefs-shots img { height: 96px; width: auto; border-radius: 8px; cursor: zoom-in; flex-shrink: 0; border: 1px solid var(--border);
+  transition: transform .15s; }
+.mrefs-shots img:hover { transform: scale(1.04); border-color: var(--accent); }
+.mrefs-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.wiki .mrefs-links a.chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg); color: var(--muted);
+  font-size: 12.5px; cursor: pointer; text-decoration: none; }
+.wiki .mrefs-links a.chip:hover { color: var(--fg); border-color: var(--accent); }
+.wiki .mrefs-links a.chip.found { border-color: #6fcf9780; }
+.wiki .mrefs-links a.chip.ext::after { content: " ↗"; color: var(--faint); }
+.refs-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.wiki a.refcard { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--card); color: var(--fg); cursor: pointer; text-decoration: none; }
+.wiki a.refcard:hover { border-color: var(--accent); }
+.refcard small { color: var(--faint); }
+.refs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+.refthumb { margin: 0; cursor: zoom-in; }
+.refthumb img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+.refthumb:hover img { border-color: var(--accent); }
+.refthumb figcaption { font-size: 12px; color: var(--muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.refs-overview h2 small { color: var(--faint); font-weight: 400; font-size: 13px; }
+.lightbox { position: fixed; inset: 0; z-index: 50; background: #000d; display: flex; align-items: center; justify-content: center; }
+.lightbox[hidden] { display: none; }
+.lightbox figure { margin: 0; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center; }
+.lightbox img { max-width: 90vw; max-height: 82vh; border-radius: 8px; object-fit: contain; }
+.lightbox figcaption { margin-top: 8px; color: #ddd; font-size: 13px; text-align: center; }
+.lightbox button { position: absolute; border: 0; background: #ffffff1a; color: #fff; border-radius: 999px; cursor: pointer;
+  width: 44px; height: 44px; font-size: 24px; line-height: 1; }
+.lightbox button:hover { background: #ffffff33; }
+.lb-close { top: 16px; right: 16px; font-size: 18px !important; }
+.lb-prev { left: 16px; top: 50%; transform: translateY(-50%); }
+.lb-next { right: 16px; top: 50%; transform: translateY(-50%); }
+
+/* ---------- browse all games ---------- */
+.shelf-title small { font-weight: 400; color: var(--faint); font-size: 13px; margin-left: 8px; }
+.browsebar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 6px 0 8px; }
+.browsebar input[type=search] { flex: 1; min-width: 220px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--fg); font: inherit; outline: none; }
+.browsebar input[type=search]:focus { border-color: var(--accent); }
+.seg { display: flex; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; background: var(--card); color: var(--muted); padding: 7px 12px; font: inherit; cursor: pointer; }
+.seg button.active { background: var(--accent); color: #fff; }
+.chk { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13.5px; cursor: pointer; }
+.small { font-size: 12.5px; margin: 2px 0; }
+.blist { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+.brow { display: flex; align-items: center; gap: 12px; padding: 6px 10px; border-radius: 10px; background: var(--card);
+  border: 1px solid transparent; cursor: pointer; }
+.brow:hover { border-color: var(--accent); }
+.brank { width: 56px; color: var(--faint); font-size: 12.5px; text-align: right; flex-shrink: 0; }
+.bart { width: 92px; height: 43px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: #0004; }
+.bart img, .bart .noart { width: 100%; height: 100%; object-fit: cover; display: flex; align-items: center; justify-content: center; }
+.bname { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.bname b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bname small { color: var(--faint); font-size: 12px; }
+.bstores { display: flex; gap: 4px; }
+.store { font-size: 11px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+.store.steam { border-color: #66c0f480; color: #9fd3f7; }
+.store.epic { border-color: #ffffff60; color: #eee; }
+.store.indie { border-color: #a4d00780; color: #c6e86a; }
+.covbadge { display: inline-block; min-width: 44px; text-align: center; font-size: 12px; font-weight: 600; padding: 3px 8px;
+  border-radius: 999px; background: #ffffff14; color: var(--muted); }
+.covbadge.c0 { background: #e0525233; color: #f08a8a; }
+.covbadge.c1 { background: #e0a05233; color: #f0c08a; }
+.covbadge.c2 { background: #d0d05233; color: #e6e68a; }
+.covbadge.c3, .covbadge.c4 { background: #52e08a33; color: #8af0b4; }
+.covline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--muted); }
+.kind-index .dot { background: #f0c05a; }
+/* ---------- MapGenie markers ---------- */
+.wiki details.markercat { border: 1px solid var(--border); border-radius: 10px; margin: 6px 0; background: var(--card); }
+.wiki details.markercat[hidden] { display: none; }
+.wiki details.markercat summary { cursor: pointer; padding: 8px 12px; }
+.wiki details.markercat summary small { color: var(--faint); margin-left: 6px; }
+.wiki details.markercat ul { list-style: none; margin: 0; padding: 0 12px 10px; }
+.wiki li.marker { padding: 7px 0; border-top: 1px solid var(--border); }
+.wiki li.marker[hidden] { display: none; }
+.wiki li.marker p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; }
+.wiki li.marker .mlink { font-size: 12px; margin-left: 6px; cursor: pointer; }
+.markermedia { display: flex; gap: 6px; margin-top: 6px; }
+.markermedia img { height: 90px; width: auto; border-radius: 6px; }

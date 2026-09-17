@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Game Guide</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="/static/icon.png">
+</head>
+<body>
+<header class="topbar">
+  <button class="brand" id="homeBtn" title="Library">
+    <span class="logo">◈</span><span>Game Guide</span>
+  </button>
+  <div class="crumb" id="crumb"></div>
+  <div class="spacer"></div>
+  <div class="gamesearch">
+    <input id="gameSearch" type="search" placeholder="Find any PC game…" autocomplete="off">
+    <div class="dropdown" id="gameResults" hidden></div>
+  </div>
+</header>
+
+<main class="split">
+  <!-- LEFT: library / guide -->
+  <section class="guide" id="guide">
+    <div class="view" id="libraryView">
+      <div class="hero">
+        <h1>Your PC games</h1>
+        <p>Pick a game to open its guides. Every answer is cross-checked across all the wikis that cover it.</p>
+      </div>
+      <h2 class="shelf-title" id="recentTitle" hidden>Recently opened</h2>
+      <div class="grid" id="recentGrid"></div>
+      <h2 class="shelf-title">Installed games <small>Steam &amp; Epic</small></h2>
+      <div class="grid" id="installedGrid"><div class="muted">Scanning your Steam library…</div></div>
+      <h2 class="shelf-title">Browse all PC games <small>Steam &amp; Epic · most popular first</small></h2>
+      <div class="browsebar">
+        <input id="browseSearch" type="search" placeholder="Filter the catalog…" autocomplete="off">
+        <div class="seg" id="browseStores"><button class="active" data-store="">All</button><button data-store="steam">Steam</button><button data-store="epic">Epic</button></div>
+        <label class="chk"><input type="checkbox" id="browseIndie"> Indie only</label>
+      </div>
+      <div class="muted small" id="browseInfo"></div>
+      <div class="muted small" id="prebuildStatus"></div>
+      <div class="blist" id="browseList"></div>
+      <button class="btn" id="browseMore" hidden>Load more</button>
+    </div>
+
+    <div class="view" id="gameView" hidden>
+      <div class="gamehead" id="gameHead"></div>
+      <div class="sourcebar">
+        <div class="tabs" id="sourceTabs"></div>
+        <form class="wikisearch" id="wikiSearchForm">
+          <input id="wikiSearch" type="search" placeholder="Search this source…" autocomplete="off">
+        </form>
+      </div>
+      <div class="reader">
+        <nav class="sidebar" id="sidebar">
+          <div class="missions" id="missions"></div>
+          <div class="toc" id="toc"></div>
+        </nav>
+        <article class="page" id="page"></article>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" id="divider" title="Drag to resize"></div>
+
+  <!-- RIGHT: AI chat -->
+  <section class="chat" id="chat">
+    <div class="chathead">
+      <div>
+        <div class="chattitle">Guide AI</div>
+        <div class="chatsub" id="chatSub">Open a game to start</div>
+      </div>
+      <div class="spacer"></div>
+      <select id="modelSelect" title="Local AI model"></select>
+      <button class="iconbtn" id="clearChat" title="New conversation">⟲</button>
+    </div>
+    <div class="messages" id="messages">
+      <div class="welcome" id="welcome">
+        <div class="bigicon">✦</div>
+        <h3>Ask anything about your game</h3>
+        <p>Where to find items, how to beat a boss, build tips, crash fixes. Answers come from the wikis on the left, compared against each other.</p>
+      </div>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+    <form class="composer" id="composer">
+      <textarea id="input" rows="1" placeholder="Pick a game first…" disabled></textarea>
+      <button id="sendBtn" class="send" disabled title="Send (Enter)">➤</button>
+    </form>
+  </section>
+</main>
+
+<div class="modal" id="wikiModal" hidden>
+  <form class="modalcard" id="wikiForm">
+    <h3>Wrong or missing wiki?</h3>
+    <p>Paste the address of any wiki for this game (wiki.gg, Fandom, or another MediaWiki site).</p>
+    <input id="wikiUrl" placeholder="https://mygame.wiki.gg" autocomplete="off">
+    <div class="modalerr" id="wikiErr"></div>
+    <div class="row">
+      <button type="button" class="btn" id="wikiRefresh">Search again</button>
+      <div class="spacer"></div>
+      <button type="button" class="btn" id="wikiCancel">Cancel</button>
+      <button class="btn primary">Add wiki</button>
+    </div>
+  </form>
+</div>
+
+<div class="lightbox" id="lightbox" hidden>
+  <button class="lb-close" title="Close (Esc)">✕</button>
+  <button class="lb-prev" title="Previous (←)">‹</button>
+  <figure><img alt=""><figcaption></figcaption></figure>
+  <button class="lb-next" title="Next (→)">›</button>
+</div>
+
+<script src="/static/app.js"></script>
+<script src="/static/refs.js"></script>
+<script src="/static/browse.js"></script>
+</body>
+</html>
