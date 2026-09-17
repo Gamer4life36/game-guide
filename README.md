@@ -70,3 +70,7 @@ Nintendo games are not included.
 | `web/` | Front end (`app.js`, `refs.js`, `browse.js`, `style.css`) |
 
 Content shown in the app belongs to its wikis, sites and authors. It is fetched live for personal reference.
+
+## License
+
+The code is released under the [MIT License](LICENSE). Content shown by the app (wiki pages, guides, maps, images) is not covered by it: it belongs to its original sites and authors.
