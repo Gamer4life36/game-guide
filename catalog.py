@@ -121,15 +121,19 @@ def epic_all(log, page_size=40):
                                                      json.dumps({"query": EPIC_QUERY, "variables": variables}).encode(),
                                                      {"Content-Type": "application/json"}))
             store = j["data"]["Catalog"]["searchStore"]
+            if not store:
+                raise ValueError("empty page")
         except Exception as e:
             log(f"Epic page at {start} failed: {e}")
             break
-        els = store["elements"]
+        els = store.get("elements") or []
         for e in els:
+            if not e or not e.get("title"):
+                continue  # Epic sometimes returns empty entries
             slug = e.get("productSlug") or next((m["pageSlug"] for m in e.get("offerMappings") or [] if m.get("pageSlug")), "")
             out.append({"name": e["title"], "id": e["id"], "namespace": e["namespace"], "slug": slug,
                         "tags": [t["name"] for t in e.get("tags") or [] if t.get("name")]})
-        total = store["paging"]["total"]
+        total = (store.get("paging") or {}).get("total", 0)
         log(f"Epic: {len(out)} / {total}")
         start += page_size
         if not els or start >= total:

@@ -26,7 +26,8 @@ def catalog_age():
 
 def main():
     deadline = START + MINUTES * 60
-    if catalog_age() > CATALOG_MAX_AGE:
+    epic = sum(1 for g in catalog.load()["games"] if g.get("epic"))
+    if catalog_age() > CATALOG_MAX_AGE or not epic:  # rebuild a stale catalog, or one missing the Epic store
         print("Refreshing the catalog...", flush=True)
         try:
             catalog.build(lambda m: print(time.strftime("%H:%M:%S"), m, flush=True))
