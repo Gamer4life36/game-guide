@@ -109,36 +109,64 @@ def steam_charts():
     return ranks
 
 
+def _epic_page(start, page_size):
+    """One page of Epic's store search. Epic sometimes answers with partial errors ("socket hang up"):
+    retry those, and never keep them in the cache."""
+    name = f"epic_{start:05d}"
+    path = part_path(name)
+    bad = False
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            bad = bool(json.load(f).get("errors"))
+    if bad:
+        os.remove(path)
+    variables = {"count": page_size, "start": start, "category": "games/edition/base", "country": "US",
+                 "locale": "en-US", "sortBy": "releaseDate", "sortDir": "DESC"}
+
+    def fetch():
+        for attempt in range(4):
+            page = http_json("https://store.epicgames.com/graphql",
+                             json.dumps({"query": EPIC_QUERY, "variables": variables}).encode(),
+                             {"Content-Type": "application/json"})
+            if not page.get("errors"):
+                return page
+            time.sleep(3 * (attempt + 1))
+        raise ValueError("Epic kept returning errors")
+
+    j = cached_part(name, fetch)
+    return ((j.get("data") or {}).get("Catalog") or {}).get("searchStore") or {}
+
+
 def epic_all(log, page_size=40):
     out = []
-    start = 0
-    while True:
-        name = f"epic_{start:05d}"
-        variables = {"count": page_size, "start": start, "category": "games/edition/base", "country": "US",
-                     "locale": "en-US", "sortBy": "releaseDate", "sortDir": "DESC"}
+    start, total, failures = 0, None, 0
+    while total is None or start < total:
         try:
-            j = cached_part(name, lambda: http_json("https://store.epicgames.com/graphql",
-                                                     json.dumps({"query": EPIC_QUERY, "variables": variables}).encode(),
-                                                     {"Content-Type": "application/json"}))
-            store = j["data"]["Catalog"]["searchStore"]
-            if not store:
-                raise ValueError("empty page")
+            store = _epic_page(start, page_size)
+            failures = 0
         except Exception as e:
+            failures += 1
             log(f"Epic page at {start} failed: {e}")
-            break
+            if total is None or failures >= 5:
+                break
+            start += page_size  # skip this page, keep the rest
+            continue
         els = store.get("elements") or []
         for e in els:
             if not e or not e.get("title"):
                 continue  # Epic sometimes returns empty entries
-            slug = e.get("productSlug") or next((m["pageSlug"] for m in e.get("offerMappings") or [] if m.get("pageSlug")), "")
-            out.append({"name": e["title"], "id": e["id"], "namespace": e["namespace"], "slug": slug,
-                        "tags": [t["name"] for t in e.get("tags") or [] if t.get("name")]})
+            slug = e.get("productSlug") or next(
+                (m["pageSlug"] for m in e.get("offerMappings") or [] if m and m.get("pageSlug")), "")
+            out.append({"name": e["title"], "id": e.get("id"), "namespace": e.get("namespace"), "slug": slug,
+                        "tags": [t["name"] for t in e.get("tags") or [] if t and t.get("name")]})
         total = (store.get("paging") or {}).get("total", 0)
-        log(f"Epic: {len(out)} / {total}")
+        if start % 400 == 0:
+            log(f"Epic: {len(out)} / {total}")
         start += page_size
-        if not els or start >= total:
+        if not els:
             break
-        time.sleep(2)
+        time.sleep(1)
+    log(f"Epic: {len(out)} games")
     return out
 
 
