@@ -62,8 +62,8 @@ def main(limit=None, deadline=None):
                              elapsed=int(time.time() - started))
                 return done
             appid = str(g.get("steam") or "")
-            if catalog.is_nintendo(g["name"]):
-                continue
+            if not appid or catalog.is_nintendo(g["name"]):
+                continue  # Steam games only for now; never Nintendo
             old = guideindex.load(g["name"], appid)
             if old and time.time() - old.get("built", 0) < guideindex.INDEX_TTL:
                 skipped += 1
