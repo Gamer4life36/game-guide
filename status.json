@@ -1,0 +1,15 @@
+{
+ "state": "paused",
+ "reason": "run time limit reached",
+ "done": 453,
+ "failed": 0,
+ "skipped": 2676,
+ "total": 84619,
+ "next_rank": 3130,
+ "elapsed": 19199,
+ "updated": "2026-09-19 16:16:25",
+ "published": "2026-09-19 16:16:27",
+ "guides": 3143,
+ "catalog_built": "2026-09-17 21:24",
+ "catalog_count": 84619
+}
