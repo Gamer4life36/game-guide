@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import time
+import urllib.error
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -235,6 +236,229 @@ def build(log=print):
     log(f"Catalog: {len(entries)} games ({sum(1 for e in entries if e['epic'])} on Epic, "
         f"{sum(1 for e in entries if e['indie'])} indie)")
     return entries
+
+
+def owners_low(s):
+    """Low bound of a SteamSpy owners range string, e.g. '1,000,000 .. 2,000,000' -> 1000000."""
+    nums = [int(x.replace(",", "")) for x in re.findall(r"[\d,]+", s or "")]
+    return nums[0] if nums else 0
+
+
+def steamspy_cached():
+    """Read only the SteamSpy 'all' pages already on disk (no network). Each page = 1000 games
+    ranked by owners, so pages 000+001 already give the top ~2000 by owners."""
+    games = {}
+    for page in range(200):
+        p = part_path(f"steamspy_all_{page:03d}")
+        if not os.path.exists(p):
+            break
+        with open(p, encoding="utf-8") as f:
+            for appid, g in json.load(f).items():
+                games[int(appid)] = g
+    return games
+
+
+def build_from_cache(log=print, limit=1000, min_players=1000):
+    """Fast catalog build from cached SteamSpy pages: PC-only, non-Nintendo, at least `min_players`
+    owners, ranked by popularity, top `limit`. No slow network refetch. This is the working set;
+    the 'has guides' and '>=3 images' cuts are applied per game at prebuild time (see qualifies())."""
+    steam = steamspy_cached()
+    if not steam:
+        log("No cached SteamSpy pages yet — run catalog.py once to fetch them.")
+        return []
+    try:
+        ccu = steam_charts()
+    except Exception:
+        ccu = {}
+    entries = []
+    for appid, g in steam.items():
+        name = (g.get("name") or "").strip()
+        if not name or is_nintendo(name, g.get("developer", ""), g.get("publisher", "")):
+            continue
+        owners = owners_mid(g.get("owners"))
+        low = owners_low(g.get("owners"))
+        if low < min_players:                       # drop tiny games (< min_players owners)
+            continue
+        players = max(ccu.get(appid, 0), int(g.get("ccu") or 0))
+        reviews = int(g.get("positive") or 0) + int(g.get("negative") or 0)
+        score = owners + reviews * 20 + players * 200
+        entries.append({"name": name, "steam": appid, "epic": None, "owners": owners, "ccu": players,
+                        "reviews": reviews, "indie": False, "score": score})
+    # Popularity order: how many own it, then who's playing now, then how many reviewed it.
+    entries.sort(key=lambda e: (-e["owners"], -e["ccu"], -e["reviews"]))
+    entries = entries[:limit]
+    for i, e in enumerate(entries, 1):
+        e["rank"] = i
+    os.makedirs(DATA, exist_ok=True)
+    tmp = CATALOG + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"built": time.strftime("%Y-%m-%d %H:%M"), "count": len(entries),
+                   "top_of": len(steam), "games": entries}, f)
+    os.replace(tmp, CATALOG)
+    log(f"Catalog (fast): top {len(entries)} of {len(steam)} cached games, each with >= {min_players} owners.")
+    return entries
+
+
+def _appdetails_cached(appid, filt, keyname, parse, ttl=14 * 86400):
+    """Fetch Steam appdetails once, cache it — but ONLY on success. On a 429 rate-limit, back off and
+    retry; on any failure, return None WITHOUT caching, so a later pass can try again (never cache a
+    rate-limited miss as if the game genuinely had nothing)."""
+    path = part_path(f"{keyname}_{appid}")
+    if os.path.exists(path) and time.time() - os.path.getmtime(path) < ttl:
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    for attempt in range(5):
+        try:
+            j = http_json(f"https://store.steampowered.com/api/appdetails?appids={appid}&filters={filt}")
+            data = (j.get(str(appid)) or {}).get("data")
+            res = parse(data if isinstance(data, dict) else {})
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(res, f)
+            return res
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(2 * (attempt + 1))
+                continue
+            return None
+        except Exception:
+            return None
+    return None  # kept getting rate-limited: unknown, do not cache
+
+
+def screenshot_count(appid, ttl=14 * 86400):
+    """How many artwork screenshots Steam lists (cached). Returns None if unknown (rate-limited)."""
+    r = _appdetails_cached(appid, "screenshots", "shots",
+                           lambda d: {"n": len(d.get("screenshots") or [])}, ttl)
+    return None if r is None else r.get("n", 0)
+
+
+def has_guides(idx):
+    """True if a game has guide material: a dedicated wiki, a walkthrough/secrets/side-quest/cheat
+    section, a mission list, or decent overall coverage. A dedicated game wiki (Fandom / wiki.gg)
+    IS guide material, so its presence alone qualifies."""
+    if not idx:
+        return False
+    if idx.get("wikis"):                       # a dedicated game wiki = guides exist
+        return True
+    secs = idx.get("sections") or {}
+    if any((secs.get(k) or {}).get("items") for k in ("walkthrough", "secrets", "sidequests", "cheats")):
+        return True
+    if (idx.get("missions") or {}).get("count"):
+        return True
+    return idx.get("score", 0) >= 40
+
+
+def requalify_all(log=print, min_images=3, sleep=0.7):
+    """Recompute qualifies for every already-built guide index (after changing the rule). Throttled
+    (a small sleep between games) so Steam's appdetails doesn't rate-limit; the robust fetch also
+    backs off on 429. `ok` may be None (undecided) when Steam stayed unavailable — those are retried
+    the next time this runs, never dropped."""
+    ok = drop = undecided = 0
+    paths = glob_guides()
+    for i, path in enumerate(paths):
+        try:
+            with open(path, encoding="utf-8") as f:
+                idx = json.load(f)
+        except (OSError, ValueError):
+            continue
+        appid = idx.get("appid") or ""
+        q = qualifies(appid, idx, min_images=min_images)
+        idx["qualifies"] = q
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(idx, f)
+        if q["ok"] is True:
+            ok += 1
+        elif q["ok"] is False:
+            drop += 1
+        else:
+            undecided += 1
+        if sleep and i % 1 == 0:
+            time.sleep(sleep)
+    log(f"Re-qualified {len(paths)} guides: KEEP {ok}, DROP {drop}, UNDECIDED {undecided}.")
+    return ok, drop, undecided
+
+
+def glob_guides():
+    import glob
+    return glob.glob(os.path.join(DATA, "guides", "*.json"))
+
+
+def game_categories(appid, ttl=14 * 86400):
+    """Steam's category names (cached), e.g. 'Single-player', 'Multi-player', 'PvP', 'Co-op'.
+    Returns None if unknown (rate-limited) so callers don't mistake it for 'no categories'."""
+    r = _appdetails_cached(appid, "categories", "cats",
+                           lambda d: {"cats": [c.get("description", "") for c in (d.get("categories") or [])]}, ttl)
+    return None if r is None else r.get("cats", [])
+
+
+# Hand-curated keep/drop for games the automatic rule can't judge (e.g. PvPvE-with-missions vs pure PvP).
+# Editable at data/qualify_overrides.json: {"keep_appids": [...], "drop_appids": [...]}.
+_DEFAULT_OVERRIDES = {
+    "keep_appids": ["1808500"],   # ARC Raiders — PvPvE extraction shooter WITH a mission/quest campaign
+    "drop_appids": [],
+}
+def load_overrides():
+    path = os.path.join(DATA, "qualify_overrides.json")
+    if not os.path.exists(path):
+        try:
+            os.makedirs(DATA, exist_ok=True)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(_DEFAULT_OVERRIDES, f, indent=2)
+        except Exception:
+            pass
+        return _DEFAULT_OVERRIDES
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return _DEFAULT_OVERRIDES
+
+
+def override_for(appid):
+    ov = load_overrides()
+    a = str(appid)
+    if a in {str(x) for x in ov.get("keep_appids", [])}:
+        return True
+    if a in {str(x) for x in ov.get("drop_appids", [])}:
+        return False
+    return None
+
+
+def has_campaign(appid, idx):
+    """The user's rule — keep games with a real single-player/PvE mission campaign; drop pure-PvP and
+    non-game software. Signal: Steam's 'Single-player' category. Returns True/False, or None if the
+    Steam lookup was rate-limited AND no walkthrough/mission was found (so we retry rather than drop).
+    Campaign games (CoD, Elden Ring, Hades, GTA, Left 4 Dead) -> True; PvP-only (Apex, CS:GO, PUBG,
+    Dota) and software (Wallpaper Engine, Blender) -> False. ARC-Raiders-style PvPvE-with-missions are
+    handled by overrides."""
+    cats = game_categories(appid)
+    if cats is not None:
+        return "Single-player" in cats
+    # categories unknown (rate-limited): infer from a real walkthrough/mission list, else undecided.
+    if (idx.get("missions") or {}).get("count"):
+        return True
+    if ((idx.get("sections") or {}).get("walkthrough") or {}).get("items"):
+        return True
+    return None
+
+
+def qualifies(appid, idx, min_images=3):
+    """Keep a game only if it has a single-player/PvE CAMPAIGN (real guides, not PvP/how-to reference)
+    AND at least `min_images` artwork images. `ok` is None when Steam data was rate-limited (undecided,
+    retry later) so a game is never dropped just because a lookup failed."""
+    ov = override_for(appid)
+    imgs = screenshot_count(appid)
+    if ov is not None:                     # explicit user decision wins
+        return {"campaign": ov, "has_guides": ov, "images": imgs, "override": True,
+                "ok": bool(ov) and (imgs is None or imgs >= min_images)}
+    campaign = has_campaign(appid, idx)
+    if campaign is None or imgs is None:   # a signal is unknown -> undecided, don't drop
+        return {"campaign": campaign, "has_guides": campaign, "images": imgs, "ok": None}
+    return {"campaign": campaign, "has_guides": campaign, "images": imgs,
+            "ok": bool(campaign) and imgs >= min_images}
 
 
 def load():

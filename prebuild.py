@@ -17,6 +17,14 @@ import guideindex
 import server
 import webguides
 
+# Non-ASCII game names (e.g. CJK titles) crash print() when stdout is a cp1252-redirected file
+# on Windows. Force UTF-8 with replacement so the builder never dies on a title it can't encode.
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 STATUS = os.path.join(server.DATA, "prebuild_status.json")
 
 
@@ -48,7 +56,7 @@ def top_games():
 
 def main(limit=None, deadline=None):
     """Build indexes down the ranking. limit: only the top N. deadline: epoch seconds to stop by (cloud runs)."""
-    done = failed = skipped = 0
+    done = failed = skipped = qualified = 0
     started = time.time()
     while True:
         games = top_games()
@@ -75,12 +83,23 @@ def main(limit=None, deadline=None):
                              current=g["name"], rank=g.get("rank"))
                 time.sleep(60)
             write_status(state="building", current=g["name"], rank=g.get("rank"), done=done, failed=failed,
-                         skipped=skipped, total=len(games), elapsed=int(time.time() - started))
+                         skipped=skipped, qualified=qualified, total=len(games), elapsed=int(time.time() - started))
             try:
                 idx = guideindex.build(g["name"], appid, force=True)
+                # Apply the user's keep/drop filter: must HAVE guides AND >= 3 artwork images.
+                q = catalog.qualifies(appid, idx)
+                idx["qualifies"] = q
+                guideindex.save(idx)
                 done += 1
                 worked = True
-                print(time.strftime("%H:%M:%S"), f"#{g.get('rank')} {g['name']}: coverage {idx['score']}", flush=True)
+                if q["ok"] is True:
+                    qualified += 1
+                tag = ("KEEP" if q["ok"] is True
+                       else f"DROP(campaign={q.get('campaign')},images={q['images']})" if q["ok"] is False
+                       else "UNDECIDED(rate-limited, retry later)")
+                print(time.strftime("%H:%M:%S"),
+                      f"#{g.get('rank')} {g['name']}: coverage {idx['score']}% images {q['images']} -> {tag}",
+                      flush=True)
             except Exception as e:
                 failed += 1
                 print(time.strftime("%H:%M:%S"), f"#{g.get('rank')} {g['name']}: FAILED {e}", flush=True)

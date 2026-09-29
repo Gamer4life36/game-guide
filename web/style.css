@@ -149,6 +149,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; background: var(--card);
   border: 1px solid var(--border); font-size: 12px; }
 .wiki { max-width: 900px; }
+/* Direction cues in walkthroughs: bold white with an arrow, so every step reads clearly. */
+.wiki .dir, .mrefs .dir { color: #fff; font-weight: 800; white-space: nowrap; letter-spacing: .3px; }
+.wiki .dir { text-shadow: 0 0 1px rgba(0,0,0,.6); }
 .wiki h2 { font-size: 22px; margin: 30px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .wiki h3 { font-size: 18px; margin: 22px 0 8px; }
 .wiki h4 { font-size: 15.5px; margin: 16px 0 6px; color: #d6d9e3; }
@@ -281,6 +284,32 @@ button, input, select, textarea { font: inherit; color: inherit; }
   padding: 2px 9px; font: inherit; font-size: 11px; letter-spacing: 0; text-transform: none; cursor: pointer; }
 .refsbtn:hover { color: var(--fg); border-color: var(--accent); }
 .side-title .count + .refsbtn { margin-left: auto; }
+.secretsbtn { margin-left: 6px; color: #f0c86a; border-color: #f0c86a55; }
+.secretsbtn:hover { color: #ffd987; border-color: #f0c86a; }
+
+/* Hidden-secrets callout at the top of a walkthrough page (gold). */
+.secrets-callout { margin: 0 0 18px; padding: 12px 14px; border: 1px solid #f0c86a55; border-left: 3px solid #f0c86a;
+  border-radius: 12px; background: linear-gradient(180deg, rgba(240,200,106,.10), rgba(240,200,106,.03)); }
+.secrets-head { font-size: 12px; letter-spacing: .5px; text-transform: uppercase; color: #f0c86a; font-weight: 700; margin-bottom: 8px; }
+.secrets-links { display: flex; flex-direction: column; gap: 4px; }
+.secrets-links a { color: #ffe6a8; font-weight: 600; cursor: pointer; border: 0; }
+.secrets-links a:hover { color: #fff; text-decoration: underline; }
+
+/* Hidden-secrets overview: one card per location. */
+.secrets-overview .secstatus { display: flex; align-items: center; gap: 8px; color: var(--muted); margin: 6px 0 14px; }
+.secrets-overview h2 { color: #f0c86a; border-bottom-color: #f0c86a33; }
+.secrets-loc { margin: 8px 0 16px; padding: 10px 14px; border: 1px solid #f0c86a33; border-left: 3px solid #f0c86a;
+  border-radius: 12px; background: rgba(240,200,106,.05); }
+.secrets-loc-title { display: inline-block; font-weight: 700; color: #ffe6a8; cursor: pointer; margin-bottom: 6px; }
+.secrets-loc-title:hover { color: #fff; text-decoration: underline; }
+.secrets-item { margin: 8px 0; }
+.secrets-item-title { font-weight: 600; color: #fff; }
+.secrets-text { color: var(--muted); white-space: pre-wrap; margin-top: 2px; font-size: 14px; }
+.secrets-text .dir { color: #fff; font-weight: 800; }
+.secrets-shots { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 8px; }
+.secrets-shots img { height: 90px; width: auto; max-width: 160px; object-fit: cover; border-radius: 8px;
+  border: 1px solid var(--border); cursor: zoom-in; background: var(--card); }
+.secrets-shots img:hover { border-color: #f0c86a; }
 .mrefs { margin: 18px 0 14px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent);
   border-radius: 12px; background: var(--card); }
 .mrefs-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }

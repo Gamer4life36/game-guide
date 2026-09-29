@@ -216,9 +216,308 @@ async function openPage(sourceKey, title, opts = {}) {
     renderPage(p, title);
   } catch (e) {
     if (token !== openPage.token) return;
+    // Mission had no standalone page — fall back to the overview page scrolled to its section.
+    if (opts.missionFallback) {
+      state.pendingAnchor = opts.missionFallback.anchor;
+      return openPage(opts.missionFallback.source, opts.missionFallback.page, { noHistory: true });
+    }
     if (opts.fallbackHome && title) return openPage(sourceKey, "", { noHistory: true });
     if (state.game !== game) return;
     pageEl.innerHTML = `<div class="empty">${esc(e.message)}<br><br><button class="btn" onclick="history_back()">← Back</button></div>`;
+  }
+}
+
+// Turn direction words in walkthrough text into clear arrows + bold-white,
+// e.g. "go left, then right at the end" -> "go ← left, then → right at the end".
+const DIR_ARROWS = [
+  [/\b(north[\s-]?east)\b/gi, "↗"],   // northeast ↗
+  [/\b(north[\s-]?west)\b/gi, "↖"],   // northwest ↖
+  [/\b(south[\s-]?east)\b/gi, "↘"],   // southeast ↘
+  [/\b(south[\s-]?west)\b/gi, "↙"],   // southwest ↙
+  [/\b(left|west|westward|westwards)\b/gi, "←"],                          // ←
+  [/\b(right|east|eastward|eastwards)\b/gi, "→"],                         // →
+  [/\b(up|upward|upwards|upstairs|climb|ascend|north|northward|northwards)\b/gi, "↑"], // ↑
+  [/\b(down|downward|downwards|downstairs|descend|drop|south|southward|southwards)\b/gi, "↓"], // ↓
+  [/\b(forward|forwards|ahead|straight|onward|onwards)\b/gi, "↑"],        // ↑
+  [/\b(back|backward|backwards|behind|return)\b/gi, "↓"],                 // ↓
+];
+function arrowizeDirections(root) {
+  if (!root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      if (!n.nodeValue || !n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const p = n.parentNode;
+      if (!p) return NodeFilter.FILTER_REJECT;
+      const tag = p.nodeName;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "A") return NodeFilter.FILTER_REJECT;
+      if (p.classList && p.classList.contains("dir")) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const targets = [];
+  let node;
+  while ((node = walker.nextNode())) targets.push(node);
+  for (const t of targets) {
+    let html = esc(t.nodeValue);
+    let changed = false;
+    for (const [re, arrow] of DIR_ARROWS) {
+      html = html.replace(re, (m) => { changed = true; return `<b class="dir">${arrow} ${m}</b>`; });
+    }
+    if (changed) {
+      const span = document.createElement("span");
+      span.innerHTML = html;
+      t.parentNode.replaceChild(span, t);
+    }
+  }
+}
+
+// Surface hidden secrets: if the walkthrough has secret/collectible/easter-egg sections,
+// pull them into a gold callout at the top so players don't miss them.
+const SECRET_RE = /\b(secrets?|hidden|easter[\s-]?eggs?|collectibles?|unlockables?|exploits?|glitch(?:es)?|cheats?|secret area|secret ending|hidden area|lore notes?|missable)\b/i;
+function surfaceSecrets(wiki) {
+  if (!wiki) return;
+  const heads = $$("h2, h3, h4", wiki).filter((h) => SECRET_RE.test(h.textContent) && h.textContent.trim().length < 60);
+  if (!heads.length) return;
+  const box = document.createElement("div");
+  box.className = "secrets-callout";
+  box.innerHTML = `<div class="secrets-head">🔎 Hidden secrets on this page</div>`;
+  const links = document.createElement("div");
+  links.className = "secrets-links";
+  heads.forEach((h, i) => {
+    h.id = h.id || ("secret-" + i);
+    const a = document.createElement("a");
+    a.textContent = h.textContent.trim();
+    a.onclick = () => h.scrollIntoView({ behavior: "smooth", block: "start" });
+    links.append(a);
+  });
+  box.append(links);
+  wiki.prepend(box);
+}
+
+// Ask the Guide AI for every secret in the game — reliable even when the wiki page has none.
+function askSecrets() {
+  const g = state.game?.name || "this game";
+  const input = $("#input");
+  if (!input || input.disabled || state.busy) return;
+  input.value = `List every hidden secret, collectible, easter egg, secret area and missable in ${g}. For each: its exact location and step-by-step how to get it, using arrow directions (← → ↑ ↓).`;
+  input.focus();
+  input.dispatchEvent(new Event("input"));
+  $("#composer").requestSubmit();
+}
+
+// ---- Hidden secrets, aggregated per location ----
+const _pageCache = new Map();
+async function fetchPageCached(source, title) {
+  const g = state.game;
+  const k = source + "|" + title;
+  if (_pageCache.has(k)) return _pageCache.get(k);
+  const p = await api(`/api/page?game=${encodeURIComponent(g.name)}&appid=${g.appid}&source=${encodeURIComponent(source)}&title=${encodeURIComponent(title)}`);
+  _pageCache.set(k, p);
+  return p;
+}
+// Pull every secret/hidden-space section out of a page's HTML: heading + the text under it.
+function extractSecretSections(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html || "";
+  const out = [];
+  for (const h of [...tmp.querySelectorAll("h2, h3, h4")]) {
+    if (!SECRET_RE.test(h.textContent) || h.textContent.trim().length > 70) continue;
+    const level = +h.tagName[1];
+    let text = "", n = h.nextElementSibling;
+    while (n && !(/^H[1-6]$/.test(n.tagName) && +n.tagName[1] <= level)) {
+      const t = (n.textContent || "").trim();
+      if (t) text += (text ? "\n" : "") + t;
+      if (text.length > 700) break;
+      n = n.nextElementSibling;
+    }
+    out.push({ title: h.textContent.trim(), text: text.slice(0, 700) });
+  }
+  return out;
+}
+// Break a whole page into its sections (used for dedicated Secrets/Collectibles pages,
+// whose subheadings are usually the locations).
+function extractAllSections(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html || "";
+  const heads = [...tmp.querySelectorAll("h2, h3, h4")];
+  const textUnder = (h, level) => {
+    let text = "", n = h.nextElementSibling;
+    while (n && !(/^H[1-6]$/.test(n.tagName) && +n.tagName[1] <= level)) {
+      const t = (n.textContent || "").trim();
+      if (t) text += (text ? "\n" : "") + t;
+      if (text.length > 700) break;
+      n = n.nextElementSibling;
+    }
+    return text.slice(0, 700);
+  };
+  const out = [];
+  for (const h of heads) {
+    if (h.textContent.trim().length > 70) continue;
+    const t = textUnder(h, +h.tagName[1]);
+    if (t) out.push({ title: h.textContent.trim(), text: t });
+  }
+  if (!out.length) {
+    const lead = (tmp.querySelector("p")?.textContent || tmp.textContent || "").trim().slice(0, 700);
+    if (lead) out.push({ title: "", text: lead });
+  }
+  return out;
+}
+
+// Find dedicated secret pages on the active source (Secrets, Collectibles, Easter eggs, …).
+async function discoverSecretPages(game, source, appid) {
+  const seen = new Set(), pages = [];
+  for (const q of ["secrets", "hidden", "collectibles", "easter egg"]) {
+    let res;
+    try { res = await api(`/api/search?game=${encodeURIComponent(game)}&source=${encodeURIComponent(source)}&appid=${encodeURIComponent(appid || "")}&q=${encodeURIComponent(q)}`); }
+    catch { continue; }
+    for (const r of (res || [])) {
+      const t = r.title || r;
+      if (t && SECRET_RE.test(t) && !seen.has(t)) { seen.add(t); pages.push(t); }
+      if (pages.length >= 6) return pages;
+    }
+  }
+  return pages;
+}
+
+// Reference images from a page's HTML (free-use wiki screenshots/maps). Skips icons/logos.
+function pageImages(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html || "";
+  const out = [], seen = new Set();
+  for (const img of tmp.querySelectorAll("img")) {
+    let s = img.getAttribute("src") || img.getAttribute("data-src") || "";
+    if (s.startsWith("//")) s = "https:" + s;
+    if (!/^https?:/i.test(s)) continue;                       // skip relative we can't resolve
+    if (/logo|icon|placeholder|spinner|blank|1x1|sprite|button|badge/i.test(s)) continue;
+    const w = +(img.getAttribute("width") || 0), h = +(img.getAttribute("height") || 0);
+    if ((w && w < 60) || (h && h < 60)) continue;             // skip tiny inline glyphs
+    if (seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+
+// Simple full-size image viewer, reusing the existing lightbox element.
+function showImage(src, caption) {
+  const box = $("#lightbox");
+  if (!box) { window.open(src, "_blank"); return; }
+  $("img", box).src = src;
+  $("figcaption", box).textContent = caption || "";
+  const p = $(".lb-prev", box), n = $(".lb-next", box);
+  if (p) p.hidden = true;
+  if (n) n.hidden = true;
+  box.hidden = false;
+}
+
+function secretsCard(locName, sections, onOpen, images) {
+  const card = document.createElement("section");
+  card.className = "secrets-loc";
+  const title = document.createElement("a");
+  title.className = "secrets-loc-title";
+  title.textContent = "📍 " + locName;
+  title.title = "Open this page";
+  if (onOpen) title.onclick = onOpen;
+  card.append(title);
+  if (images && images.length) {
+    const strip = document.createElement("div");
+    strip.className = "secrets-shots";
+    images.forEach((src) => {
+      const u = proxied(src);
+      const img = document.createElement("img");
+      img.src = u;
+      img.loading = "lazy";
+      img.alt = locName + " reference";
+      img.onerror = () => img.remove();
+      img.onclick = () => showImage(u, locName);
+      strip.append(img);
+    });
+    card.append(strip);
+  }
+  for (const s of sections) {
+    const item = document.createElement("div");
+    item.className = "secrets-item";
+    if (s.title) {
+      const b = document.createElement("div");
+      b.className = "secrets-item-title";
+      b.textContent = s.title;
+      item.append(b);
+    }
+    const t = document.createElement("div");
+    t.className = "secrets-text";
+    t.textContent = s.text;
+    arrowizeDirections(t);
+    item.append(t);
+    card.append(item);
+  }
+  return card;
+}
+
+// Scan every mission/location for secret sections and list them, separated per location.
+async function showSecretsOverview() {
+  const m = state.missions, g0 = state.game;
+  if (!m || !g0) return;
+  const page = $("#page");
+  const back = state.history.length ? `<button class="iconbtn" title="Back" onclick="history_back()">←</button>` : "";
+  page.innerHTML = `<div class="pagehead">${back}<h1>🔎 Hidden secrets</h1></div>
+    <div class="pagemeta"><span>${esc(g0.name)} · secret areas & collectibles, by location</span></div>
+    <div class="wiki secrets-overview"><div class="secstatus" id="secStatus"><div class="spinner"></div> Scanning every location for secrets…</div><div id="secOv"></div></div>`;
+  $("#toc").innerHTML = "";
+  if (state.page) state.history.push(state.page);
+  state.page = { source: m.source, title: "Hidden secrets", open: "secrets", url: "" };
+  const token = (showSecretsOverview.token = (showSecretsOverview.token || 0) + 1);
+  const alive = () => token === showSecretsOverview.token && state.game === g0;
+  const ov = $("#secOv");
+  const setStatus = (msg) => { const st = $("#secStatus"); if (st) st.innerHTML = `<div class="spinner"></div> ${msg}`; };
+  let found = 0;
+
+  // 1) Dedicated secret pages (Secrets / Collectibles / Easter eggs) — this is where most live.
+  setStatus("Looking for secret &amp; collectible pages…");
+  const secretPages = await discoverSecretPages(g0.name, m.source, g0.appid);
+  if (!alive()) return;
+  if (secretPages.length) {
+    const h = document.createElement("h2"); h.textContent = "🗝 Secret & collectible guides"; ov.append(h);
+    for (const t of secretPages) {
+      if (!alive()) return;
+      setStatus(`Reading “${t}”…`);
+      let p; try { p = await fetchPageCached(m.source, t); } catch { continue; }
+      const secs = extractAllSections(p.html);
+      if (!secs.length) continue;
+      ov.append(secretsCard(p.title || t, secs, () => openPage(m.source, p.title || t), pageImages(p.html)));
+      found++;
+    }
+  }
+
+  // 2) Secrets written inside each mission/location's own page.
+  const total = m.groups.filter((g) => !g.local).reduce((n, g) => n + g.items.length, 0);
+  let scanned = 0, missionHeader = null;
+  for (const g of m.groups) {
+    if (g.local) continue;
+    for (const it of g.items) {
+      if (!alive()) return;
+      const name = it.title || it.anchor || it.label;
+      scanned++;
+      setStatus(`Scanning locations… ${scanned}/${total} · ${found} with secrets`);
+      if (!name) continue;
+      let p; try { p = await fetchPageCached(m.source, it.title || it.anchor); } catch { continue; }
+      const secs = extractSecretSections(p.html);
+      if (!secs.length) continue;
+      if (!missionHeader) { missionHeader = document.createElement("h2"); missionHeader.textContent = "📌 Secrets by mission"; ov.append(missionHeader); }
+      ov.append(secretsCard(name, secs, () => openMissionItem(m, g, it), pageImages(p.html)));
+      found++;
+    }
+  }
+
+  const st = $("#secStatus");
+  if (st) st.remove();
+  if (!found) {
+    ov.innerHTML = `<p class="muted">No secret / hidden-area sections are written into <b>${esc(sourceOf(m.source)?.label || m.source)}</b> yet — but that doesn't mean the game has none. Try another source tab, or ask the Guide AI, which digs through every source at once.</p>`;
+    const b = document.createElement("button");
+    b.className = "btn";
+    b.textContent = "🔎 Ask the Guide AI for every secret";
+    b.onclick = askSecrets;
+    ov.append(b);
   }
 }
 
@@ -233,6 +532,8 @@ function renderPage(p, requested) {
     <div class="pagemeta">
       <span class="pill kind-${src.kind}"><span class="dot" style="width:7px;height:7px;border-radius:50%;display:inline-block"></span>${esc(src.label || src.sitename)}</span>
       ${edited ? `<span>${esc(edited)}</span>` : ""}
+      <button class="btn" id="detailPage">📖 Detailed walkthrough</button>
+      <button class="btn" id="secretsPage">🔎 Secrets here</button>
       <button class="btn" id="askPage">✦ Ask about this page</button>
     </div>
     <div class="wiki">${p.html}</div>
@@ -241,8 +542,22 @@ function renderPage(p, requested) {
         : ["web", "steamguides"].includes(src.kind) ? ". Text and images belong to the original author."
         : ", licensed under the wiki's Creative Commons license (usually CC BY-SA)."}
       Images belong to their respective owners.</div>`;
+  arrowizeDirections($(".wiki", pageEl));
+  surfaceSecrets($(".wiki", pageEl));
   pageEl.scrollTop = 0;
   $("#askPage").onclick = () => { $("#input").value = `Summarise the key things I need to know from the "${p.title}" page.`; $("#input").focus(); autosize(); };
+  // Detailed, numbered, arrow-marked walkthrough of THIS mission (asks the Guide AI, auto-sends).
+  $("#detailPage").onclick = () => {
+    const input = $("#input"); if (!input || input.disabled || state.busy) return;
+    input.value = `Give a detailed step-by-step walkthrough of "${p.title}" in ${state.game?.name || "this game"}. Number every step, be specific about exact locations, items and enemies, and mark all movement with arrow directions (← → ↑ ↓). Include anything easy to miss.`;
+    input.dispatchEvent(new Event("input")); $("#composer").requestSubmit();
+  };
+  // Secrets specific to this mission/area.
+  $("#secretsPage").onclick = () => {
+    const input = $("#input"); if (!input || input.disabled || state.busy) return;
+    input.value = `What hidden secrets, collectibles, easter eggs, missables or shortcuts are in "${p.title}" (${state.game?.name || "this game"})? Give the exact location and how to get each, using arrow directions.`;
+    input.dispatchEvent(new Event("input")); $("#composer").requestSubmit();
+  };
   // TOC from rendered headings
   const toc = $("#toc");
   const heads = $$(".wiki h2, .wiki h3", pageEl).filter((h) => h.textContent.trim() && !h.closest("aside, table, [class*=infobox]"));
@@ -272,6 +587,7 @@ async function loadMissions(g) {
     state.missions = m;
     renderMissions();
     if (window.MissionRefs) MissionRefs.load(g);
+    openFirstMission();  // middle shows details, not a repeat of the mission list
   } catch (e) {
     if (state.game?.name === g.name) box.innerHTML = `<div class="side-title">Missions</div><div class="side-empty">Couldn't load missions: ${esc(e.message)}</div>`;
   }
@@ -344,16 +660,7 @@ Started ${it.started}` : "");
       edit.textContent = "✎";
       edit.onclick = (e) => { e.stopPropagation(); renameMission(key, custom || "", original); };
       li.append(edit);
-      a.onclick = () => {
-        if (m.local || g.local) return askAbout(`${custom || it.label} (${g.name})`);
-        const target = it.page || m.page;
-        if (window.MissionRefs) MissionRefs.select(it, g);
-        if (it.title) openPage(m.source, it.title);
-        else if (state.page && state.page.open === target) { window.MissionRefs?.afterRender(); scrollToHeading(it.anchor); }
-        else { state.pendingAnchor = it.anchor; openPage(m.source, target); }
-        activeAnchor = it.anchor ? target + "#" + it.anchor : null;
-        highlightMission();
-      };
+      a.onclick = () => openMissionItem(m, g, it);
       li.append(a); ol.append(li);
     });
     d.append(ol);
@@ -361,6 +668,49 @@ Started ${it.started}` : "");
   });
   highlightMission();
   window.MissionRefs?.decorate();
+  // "🔎 Secrets" button in the missions header — asks the Guide AI for every secret in the game.
+  const st = $("#missions .side-title");
+  if (st && !$("#secretsBtn")) {
+    const b = document.createElement("button");
+    b.id = "secretsBtn";
+    b.className = "refsbtn secretsbtn";
+    b.title = "Every hidden space / secret in the guides, separated by location";
+    b.textContent = "🔎 Secrets";
+    b.onclick = showSecretsOverview;
+    st.append(b);
+  }
+}
+
+// Open one mission's DETAILS in the middle. Missions are usually sections (anchors) on
+// one big overview page; each also has its own wiki page, so open that page to show just
+// this mission — falling back to the overview page scrolled to its section if none exists.
+function openMissionItem(m, g, it, opts = {}) {
+  if (m.local || g.local) return askAbout(`${it.label || it.anchor || it.title} (${g.name})`);
+  if (window.MissionRefs) MissionRefs.select(it, g);
+  const target = it.page || m.page;
+  if (it.title) {
+    openPage(m.source, it.title, opts);
+    activeAnchor = null;
+  } else if (it.anchor) {
+    openPage(m.source, it.anchor, { ...opts, missionFallback: { source: m.source, page: target, anchor: it.anchor } });
+    activeAnchor = target ? target + "#" + it.anchor : null;
+  } else {
+    openPage(m.source, target, opts);
+    activeAnchor = null;
+  }
+  highlightMission();
+}
+
+// On game open, show the FIRST mission's details in the middle instead of the wiki
+// hub/landing page (which just repeats the mission list already shown on the left).
+function openFirstMission() {
+  const m = state.missions;
+  if (!m || m.local || !m.groups) return false;
+  for (const g of m.groups) {
+    if (g.local) continue;
+    if (g.items.length) { openMissionItem(m, g, g.items[0], { noHistory: true }); return true; }
+  }
+  return false;
 }
 
 let activeAnchor = null;
@@ -444,11 +794,15 @@ function askAbout(what, send = false) {
 function highlightMission() {
   const m = state.missions;
   $$("#missions .mlist a").forEach((a) => {
+    const openName = (state.page && (state.page.open || state.page.title) || "").toLowerCase();
     const byTitle = !!(m && state.page && state.page.source === m.source && a.dataset.title
-      && a.dataset.title.toLowerCase() === (state.page.open || state.page.title).toLowerCase());
+      && a.dataset.title.toLowerCase() === openName);
+    // A mission opened as its own page: the open page's name matches the mission's anchor name.
+    const byPageName = !!(m && state.page && state.page.source === m.source && a.dataset.anchor
+      && a.dataset.anchor.toLowerCase() === openName);
     const byAnchor = !!(activeAnchor && state.page && a.dataset.anchor && a.dataset.page === state.page.open
       && activeAnchor === state.page.open + "#" + a.dataset.anchor);
-    const on = byTitle || byAnchor;
+    const on = byTitle || byPageName || byAnchor;
     a.classList.toggle("active", on);
     if (on) {
       const det = a.closest("details");
