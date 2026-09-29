@@ -163,13 +163,27 @@ button, input, select, textarea { font: inherit; color: inherit; }
   overflow: hidden; display: block; max-width: 100%; overflow-x: auto; }
 .wiki th, .wiki td { border: 1px solid var(--border); padding: 6px 10px; vertical-align: top; text-align: left; }
 .wiki th { background: #22252e; color: #dfe2ea; }
-.wiki .infobox, .wiki .portable-infobox, .wiki aside, .wiki [class*="infobox"] { float: right; clear: right; width: 290px;
-  margin: 0 0 16px 22px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px;
-  font-size: 13.5px; display: block; }
+/* Wiki infobox: card the CONTAINER only. (The old [class*="infobox"] wildcard boxed every nested
+   field, so each label/value rendered as its own empty box.) */
+.wiki .infobox, .wiki .portable-infobox, .wiki aside, .wiki .infobox-main { float: right; clear: right; width: 290px;
+  max-width: 46%; margin: 0 0 16px 22px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 12px; padding: 12px 14px; font-size: 13.5px; display: block; }
+/* Reset nested infobox parts so they stop becoming their own boxes. */
+.wiki .infobox-row, .wiki .infobox-title, .wiki .infobox-extrainfo-title, .wiki .infobox-extrainfo-line,
+.wiki .infobox-extrainfo-line-title, .wiki .infobox-extrainfo-line-text {
+  float: none; width: auto; max-width: none; background: none; border: 0; border-radius: 0; padding: 0; }
+.wiki .infobox-title, .wiki .portable-infobox .pi-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+.wiki .infobox-row { text-align: center; color: var(--muted); letter-spacing: 1px; font-size: 12px; margin-bottom: 8px; }
+.wiki .infobox-extrainfo-title { font-weight: 700; color: var(--accent); font-size: 12px; text-transform: uppercase;
+  letter-spacing: .5px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+/* Pair label -> value on one row. */
+.wiki .infobox-extrainfo-line, .wiki .pi-data { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; }
+.wiki .infobox-extrainfo-line-title, .wiki .pi-data-label { color: var(--muted); }
+.wiki .infobox-extrainfo-line-text, .wiki .pi-data-value { text-align: right; margin: 0; }
 .wiki aside h2, .wiki [class*="infobox"] h2 { font-size: 16px; margin: 4px 0 8px; border: 0; text-align: center; }
 .wiki aside h3 { font-size: 12px; margin: 6px 0 0; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
-.wiki aside section, .wiki aside div { margin: 2px 0; }
-.wiki aside figure { margin: 0 0 8px; text-align: center; }
+.wiki aside section { margin: 2px 0; }
+.wiki aside figure, .wiki .infobox-main figure { margin: 0 0 8px; text-align: center; }
 .wiki ul, .wiki ol { padding-left: 22px; }
 .wiki li { margin: 3px 0; }
 .wiki blockquote { border-left: 3px solid var(--accent); margin: 12px 0; padding: 4px 14px; color: #cfd3de; background: #1a1c24; }
