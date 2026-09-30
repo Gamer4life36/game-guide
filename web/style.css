@@ -324,6 +324,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .secrets-shots img { height: 90px; width: auto; max-width: 160px; object-fit: cover; border-radius: 8px;
   border: 1px solid var(--border); cursor: zoom-in; background: var(--card); }
 .secrets-shots img:hover { border-color: #f0c86a; }
+
+/* Detailed illustrated walkthrough embedded under a sparse mission page. */
+.detail-embed { margin: 22px 0 8px; padding: 14px 18px; border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 12px; background: rgba(120,140,255,.05); }
+.detail-head { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+.detail-head small { color: var(--muted); font-weight: 500; }
+.detail-embed img { max-width: 100%; height: auto; border-radius: 8px; margin: 8px 0; display: block; }
+.detail-embed h2 { font-size: 18px; margin: 16px 0 8px; }
+.detail-embed h3 { font-size: 16px; margin: 12px 0 6px; }
 .mrefs { margin: 18px 0 14px; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--accent);
   border-radius: 12px; background: var(--card); }
 .mrefs-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }

@@ -524,6 +524,49 @@ async function showSecretsOverview() {
   }
 }
 
+// Embed the detailed, illustrated web walkthrough below a sparse mission page (wiki quest stubs have
+// little detail and no pictures). Pulls the game's best walkthrough (Neoseeker / Whisper of the House)
+// with its screenshots and location steps, right under the wiki summary.
+const _detailCache = new Map();
+async function enrichMissionDetail(pageEl, p) {
+  const wiki = $(".wiki", pageEl);
+  const g = state.game, m = state.missions;
+  if (!wiki || !g || !m) return;
+  const isMission = (m.groups || []).some((grp) => (grp.items || []).some((it) =>
+    (it.title || it.anchor || it.label) === p.open));
+  if (!isMission) return;
+  if (wiki.innerText.trim().length > 1400) return;         // already detailed
+  if ($(".detail-embed", wiki)) return;
+  const box = document.createElement("div");
+  box.className = "detail-embed";
+  box.innerHTML = `<div class="detail-head">📖 Detailed illustrated walkthrough</div><div class="muted small">Loading full walkthrough with screenshots…</div>`;
+  wiki.append(box);
+  const token = (enrichMissionDetail.token = (enrichMissionDetail.token || 0) + 1);
+  try {
+    const key = g.name + "|" + g.appid;
+    let wt = _detailCache.get(key);
+    if (wt === undefined) {
+      const gi = await api(`/api/guide_index?game=${encodeURIComponent(g.name)}&appid=${g.appid || ""}`);
+      const items = ((gi.sections || {}).walkthrough || {}).items || [];
+      // Prefer sources that include screenshots (Whisper of the House, Game8, IGN…) over text-only ones.
+      wt = items.find((i) => /whisper|game8|ign|gamesradar|pcgamesn|9puz/i.test(i.site || ""))
+        || items.find((i) => /neoseeker|gamepressure|gosunoob/i.test(i.site || ""))
+        || items[0] || null;
+      _detailCache.set(key, wt);
+    }
+    if (!wt || token !== enrichMissionDetail.token || state.game !== g) { box.remove(); return; }
+    let url = wt.open || wt.url;
+    if (!url.startsWith("web:")) url = "web:" + url;   // web source needs the web: prefix for full content+images
+    const wp = await api(`/api/page?game=${encodeURIComponent(g.name)}&appid=${g.appid || ""}&source=web&title=${encodeURIComponent(url)}`);
+    if (!wp || !wp.html || token !== enrichMissionDetail.token) { box.remove(); return; }
+    box.innerHTML = `<div class="detail-head">📖 Detailed walkthrough <small>— ${esc(wt.site || "guide")}</small></div>${wp.html}`;
+    arrowizeDirections(box);
+    $$("img", box).forEach((img) => { img.loading = "eager"; img.onerror = () => (img.style.display = "none"); });
+  } catch {
+    box.remove();
+  }
+}
+
 function renderPage(p, requested) {
   state.page = { source: p.source.key, title: p.title, open: requested || p.title, url: p.url };
   const src = sourceOf(p.source.key) || p.source;
@@ -547,6 +590,7 @@ function renderPage(p, requested) {
       Images belong to their respective owners.</div>`;
   arrowizeDirections($(".wiki", pageEl));
   surfaceSecrets($(".wiki", pageEl));
+  enrichMissionDetail(pageEl, state.page);
   pageEl.scrollTop = 0;
   $("#askPage").onclick = () => { $("#input").value = `Summarise the key things I need to know from the "${p.title}" page.`; $("#input").focus(); autosize(); };
   // Detailed, numbered, arrow-marked walkthrough of THIS mission (asks the Guide AI, auto-sends).
