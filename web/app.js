@@ -557,6 +557,10 @@ async function enrichMissionDetail(pageEl, p) {
     const wp = await api(`/api/page?game=${encodeURIComponent(g.name)}&appid=${g.appid || ""}&source=web&title=${encodeURIComponent(url)}`);
     if (dead() || !wp || !wp.html) { box.remove(); return; }
     box.innerHTML = `<div class="detail-head">📖 ${esc(step)} — walkthrough <small>— ${esc(hit.site || "guide")}</small></div>${wp.html}`;
+    // Cut the site's "Latest/Related articles" footer — it's thumbnails of OTHER missions, not this one.
+    const cut = $$("h2, h3, h4", box).find((h) =>
+      /latest articles|related|more (guides|articles)|you may also like|trending|recommended|popular|read (more|next)|next article|other guides/i.test(h.textContent));
+    if (cut) { let n = cut; while (n) { const next = n.nextElementSibling; n.remove(); n = next; } }
     arrowizeDirections(box);
     $$("img", box).forEach((img) => { img.loading = "eager"; img.onerror = () => (img.style.display = "none"); });
   } catch {
