@@ -381,7 +381,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid transparent; cursor: pointer; }
 .brow:hover { border-color: var(--accent); }
 .brank { width: 56px; color: var(--faint); font-size: 12.5px; text-align: right; flex-shrink: 0; }
-.bart { width: 92px; height: 43px; flex-shrink: 0; border-radius: 6px; overflow: hidden; background: #0004; }
+.bart { width: 172px; height: 80px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #0004; }
 .bart img, .bart .noart { width: 100%; height: 100%; object-fit: cover; display: flex; align-items: center; justify-content: center; }
 .bname { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .bname b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
