@@ -31,6 +31,7 @@ SITES = {  # known guide publishers -> display name (ranked first)
     "gamerempire.net": "Gamer Empire", "levelwinner.com": "Level Winner", "attackofthefanboy.com": "Attack of the Fanboy",
     "mapgenie.io": "MapGenie", "gamemappers.com": "GameMappers", "9puz.com": "9Puz", "apocanow.com": "Apocanow",
     "noobfeed.com": "NoobFeed", "thegamer.com": "TheGamer",
+    "whisperofthehouse.com": "Whisper of the House", "games.gg": "Games.GG", "insider-gaming.com": "Insider Gaming",
 }
 SKIP_HOSTS = re.compile(r"(aigameguides|ludo\.guide|antmag\.net|legendcreate|sports360news|fortunerapps|html-tester|"
                         r"gameguide\.ai|guidegame\.ai|gamerevolution\.ai|"

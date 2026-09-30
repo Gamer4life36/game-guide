@@ -276,7 +276,7 @@ function arrowizeDirections(root) {
 
 // Surface hidden secrets: if the walkthrough has secret/collectible/easter-egg sections,
 // pull them into a gold callout at the top so players don't miss them.
-const SECRET_RE = /\b(secrets?|hidden|easter[\s-]?eggs?|collectibles?|unlockables?|exploits?|glitch(?:es)?|cheats?|secret area|secret ending|hidden area|lore notes?|missable)\b/i;
+const SECRET_RE = /\b(secrets?|hidden|easter[\s-]?eggs?|collectibles?|memor(?:y|ies)|unlockables?|exploits?|glitch(?:es)?|cheats?|secret area|secret ending|hidden area|lore notes?|missable|artifacts?)\b/i;
 function surfaceSecrets(wiki) {
   if (!wiki) return;
   const heads = $$("h2, h3, h4", wiki).filter((h) => SECRET_RE.test(h.textContent) && h.textContent.trim().length < 60);
@@ -369,7 +369,7 @@ function extractAllSections(html) {
 // Find dedicated secret pages on the active source (Secrets, Collectibles, Easter eggs, …).
 async function discoverSecretPages(game, source, appid) {
   const seen = new Set(), pages = [];
-  for (const q of ["secrets", "hidden", "collectibles", "easter egg"]) {
+  for (const q of ["secrets", "hidden", "collectibles", "memories", "easter egg"]) {
     let res;
     try { res = await api(`/api/search?game=${encodeURIComponent(game)}&source=${encodeURIComponent(source)}&appid=${encodeURIComponent(appid || "")}&q=${encodeURIComponent(q)}`); }
     catch { continue; }
