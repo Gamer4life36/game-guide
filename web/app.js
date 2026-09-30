@@ -566,24 +566,27 @@ async function enrichMissionDetail(pageEl, p) {
   const dead = () => token !== enrichMissionDetail.token || state.game !== g;
   const words = (step.toLowerCase().match(/[a-z]{4,}/g) || []);
   const nameScore = (txt) => words.filter((w) => (txt || "").toLowerCase().includes(w)).length;
+  const mapped = ((state.missionNotes || {})[step] || {}).guide_url;   // hand-curated exact guide
   try {
-    // Gather candidate guides for THIS mission from step_refs, then (if thin) a web search.
+    // A hand-mapped guide_url wins — reliable for missions whose guide title doesn't name the mission.
     let cands = [];
-    try {
-      const refs = await api(`/api/step_refs?game=${encodeURIComponent(g.name)}&step=${encodeURIComponent(step)}&region=`);
-      cands = (refs || []).map((r) => ({ url: r.open || r.url, name: r.title || "", site: r.site || "" }));
-    } catch {}
-    if (dead()) { box.remove(); return; }
-    if (!cands.some((c) => nameScore(c.name) >= Math.min(2, words.length))) {
+    if (!mapped) {
       try {
-        const w = await api(`/api/search?game=${encodeURIComponent(g.name)}&source=web&appid=${g.appid || ""}&q=${encodeURIComponent(step)}`);
-        cands = cands.concat((w || []).map((r) => ({ url: r.title, name: (r.name || "") + " " + (r.snippet || ""), site: (r.snippet || "").split("·")[0].trim() })));
+        const refs = await api(`/api/step_refs?game=${encodeURIComponent(g.name)}&step=${encodeURIComponent(step)}&region=`);
+        cands = (refs || []).map((r) => ({ url: r.open || r.url, name: r.title || "", site: r.site || "" }));
       } catch {}
+      if (dead()) { box.remove(); return; }
+      if (!cands.some((c) => nameScore(c.name) >= Math.min(2, words.length))) {
+        try {
+          const w = await api(`/api/search?game=${encodeURIComponent(g.name)}&source=web&appid=${g.appid || ""}&q=${encodeURIComponent(step)}`);
+          cands = cands.concat((w || []).map((r) => ({ url: r.title, name: (r.name || "") + " " + (r.snippet || ""), site: (r.snippet || "").split("·")[0].trim() })));
+        } catch {}
+      }
+      if (dead()) { box.remove(); return; }
+      cands = cands.filter((c) => c.url);
+      cands.sort((a, b) => nameScore(b.name) - nameScore(a.name));
     }
-    if (dead()) { box.remove(); return; }
-    cands = cands.filter((c) => c.url);
-    cands.sort((a, b) => nameScore(b.name) - nameScore(a.name));
-    const hit = cands[0];
+    const hit = mapped ? { url: mapped, name: step, site: (mapped.match(/\/\/(?:www\.)?([^/]+)/) || [])[1] || "guide" } : cands[0];
     if (!hit) { box.remove(); return; }
     let url = hit.url;
     if (!url.startsWith("web:")) url = "web:" + url;   // web source needs the web: prefix for real content+images
