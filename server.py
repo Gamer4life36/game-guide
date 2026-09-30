@@ -1051,7 +1051,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_file(os.path.join(WEB, "index.html"), "text/html; charset=utf-8")
             if u.path.startswith("/static/"):
                 name = os.path.basename(u.path)
-                ctype = {"js": "text/javascript", "css": "text/css", "png": "image/png", "svg": "image/svg+xml"}.get(
+                ctype = {"js": "text/javascript", "css": "text/css", "png": "image/png", "svg": "image/svg+xml",
+                         "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif"}.get(
                     name.rsplit(".", 1)[-1], "application/octet-stream")
                 return self.send_file(os.path.join(WEB, name), ctype + "; charset=utf-8")
             if u.path == "/api/games":
