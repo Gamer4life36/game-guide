@@ -1,13 +1,103 @@
 {
   "the last caretaker": {
     "Voyage into the Unknown": {
-      "note": "This mission is just travel — sail from your current dock to the next location. No combat or puzzles; keep the boat pointed toward the objective marker and manage fuel.",
-      "warning": "Watch for sea mines while sailing — steer around them; a hit will damage the boat.",
+      "note": "This mission is just travel \u2014 sail from your current dock to the next location. No combat or puzzles; keep the boat pointed toward the objective marker and manage fuel.",
+      "warning": "Watch for sea mines while sailing \u2014 steer around them; a hit will damage the boat.",
       "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1783560/3f622fa92171171ce34dbfe428f3f54c02e1b454/ss_3f622fa92171171ce34dbfe428f3f54c02e1b454.1920x1080.jpg",
       "image_caption": "The barge on the open sea"
     },
     "Signals from Silence": {
       "guide_url": "https://thegameslayer.com/guides/how-to-bring-the-first-navigational-relay-online-in-the-last-caretaker/"
+    },
+    "From Darkness, Light": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-from-darkness-quest"
+    },
+    "Where Waters Wait": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-where-waters-wait-quest"
+    },
+    "Light the Way Home": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-light-the-way-home-quest"
+    },
+    "Vessel of Tomorrow": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-vessel-of-tomorrow-quest"
+    },
+    "Rags to Riches": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-rags-of-riches-quest"
+    },
+    "First Light": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-first-light-quest"
+    },
+    "Lazarus, Come Forth": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-lazarus-come-forth-quest-enter-building-restore-power-walkthrough/"
+    },
+    "Awakening the Hall": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-lazarus-come-forth-quest-enter-building-restore-power-walkthrough/"
+    },
+    "From Ashes, We Rise": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-seeds-of-the-future-human-seed-vault-location-quest-walkthrough/"
+    },
+    "Guiding Light": {
+      "guide_url": "https://www.noobfeed.com/articles/the-last-caretaker-light-the-way-home-quest"
+    },
+    "Seeds of the Future": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-seeds-of-the-future-human-seed-vault-location-quest-walkthrough/"
+    },
+    "Echoes in the Grave": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-seeds-of-the-future-human-seed-vault-location-quest-walkthrough/"
+    },
+    "Beyond the Horizon": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-beginner-tips/"
+    },
+    "Voyage to the Cradle": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-seeds-of-the-future-human-seed-vault-location-quest-walkthrough/"
+    },
+    "The Next Step of Evolution": {
+      "guide_url": "https://www.thegamer.com/the-last-caretaker-the-next-step-of-evolution-creating-humans-quest-walkthrough/"
+    },
+    "Time to Let Go Soon": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/walkthrough"
+    },
+    "Earth is the Cradle of Humanity, but we can not stay": {
+      "guide_url": "https://9puz.com/2982-last-caretaker-walkthrough/"
+    },
+    "The Council of Humanity": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/human-growth-professions-guide"
+    },
+    "One Before Me": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/walkthrough"
+    },
+    "The Warehouse": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/moses-warehouse-alpha-guide"
+    },
+    "Friendly by Design": {
+      "guide_url": "https://www.last-caretaker.com/"
+    },
+    "A Machine That Still Flies": {
+      "guide_url": "https://9puz.com/2982-last-caretaker-walkthrough/"
+    },
+    "Eden Cradle": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/project-eden-guide"
+    },
+    "The Codes of Stone": {
+      "guide_url": "https://www.chaptercheats.com/cheats/pc/701238/the-last-caretaker-cheat-codes"
+    },
+    "Signal Chain": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/walkthrough"
+    },
+    "Project Eden": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/project-eden-guide"
+    },
+    "Seats of Care": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/walkthrough"
+    },
+    "True Choices": {
+      "guide_url": "https://9puz.com/2982-last-caretaker-walkthrough/"
+    },
+    "A Loyal Sphere": {
+      "guide_url": "https://thelastcaretaker.com/news/"
+    },
+    "Memory for Aron": {
+      "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/memory-for-aaron-guide"
     }
   }
 }
