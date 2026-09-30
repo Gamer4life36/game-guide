@@ -863,14 +863,53 @@ def merge_local(web, local):
 _catalog_cache = {"mtime": -1, "data": None}
 
 
+def load_art_overrides():
+    """{game name (lower): image URL} for games with no Steam art (e.g. Epic's Fortnite). Editable at
+    data/art_overrides.json; the URL is proxied through /api/img on the client."""
+    p = os.path.join(catalog.DATA, "art_overrides.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            return {str(k).lower(): v for k, v in json.load(f).items()}
+    except Exception:
+        return {}
+
+
+_qual_cache = {"sig": None, "dropped": set()}
+def dropped_appids():
+    """AppIDs the guide index has judged non-qualifying (ok === False): pure-PvP with no campaign,
+    software, etc. Undecided (None) and not-yet-built games are NOT dropped. Cached by the guides
+    dir's file count + newest mtime, so it refreshes as the build/re-qualify writes indexes."""
+    gdir = os.path.join(catalog.DATA, "guides")
+    try:
+        files = [f for f in os.listdir(gdir) if f.endswith(".json")]
+    except OSError:
+        return set()
+    sig = (len(files), max((os.path.getmtime(os.path.join(gdir, f)) for f in files), default=0))
+    if _qual_cache["sig"] != sig:
+        dropped = set()
+        for f in files:
+            try:
+                with open(os.path.join(gdir, f), encoding="utf-8") as fh:
+                    idx = json.load(fh)
+            except Exception:
+                continue
+            if (idx.get("qualifies") or {}).get("ok") is False:
+                dropped.add(str(idx.get("appid", "")))
+        _qual_cache.update(sig=sig, dropped=dropped)
+    return _qual_cache["dropped"]
+
+
 def catalog_page(q):
-    """Slice of the ranked catalog with guide coverage: ?offset=&limit=&q=&store=steam|epic&indie=1"""
+    """Slice of the ranked catalog with guide coverage: ?offset=&limit=&q=&store=steam|epic&indie=1.
+    Auto-hides pure-PvP / no-campaign / software games (guide index ok === False)."""
     path = catalog.CATALOG
     mtime = os.path.getmtime(path) if os.path.exists(path) else 0
     if _catalog_cache["mtime"] != mtime:
         _catalog_cache.update(mtime=mtime, data=catalog.load())
     data = _catalog_cache["data"]
-    games = [g for g in data["games"] if not catalog.is_nintendo(g["name"])]
+    dropped = dropped_appids()
+    games = [g for g in data["games"] if not catalog.is_nintendo(g["name"])
+             and str(g.get("steam") or "") not in dropped]
     text = (q.get("q") or "").strip().lower()
     if text:
         games = [g for g in games if text in g["name"].lower()]
@@ -1006,8 +1045,12 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/games":
                 s = load_settings()
                 drop_ids = {str(x) for x in catalog.load_overrides().get("drop_appids", [])}
-                recent = [g for g in s.get("recent", []) if str(g.get("appid", "")) not in drop_ids]
-                installed = [g for g in installed_games() if str(g.get("appid", "")) not in drop_ids]
+                arts = load_art_overrides()
+                def _stamp(g):
+                    u2 = arts.get((g.get("name") or "").lower())
+                    return {**g, "art": u2} if u2 else g
+                recent = [_stamp(g) for g in s.get("recent", []) if str(g.get("appid", "")) not in drop_ids]
+                installed = [_stamp(g) for g in installed_games() if str(g.get("appid", "")) not in drop_ids]
                 return self.send_json({"installed": installed, "recent": recent, "model": s.get("model", "")})
             if u.path == "/api/store_search":
                 return self.send_json(store_search(q.get("q", "")))

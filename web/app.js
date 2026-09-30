@@ -21,6 +21,9 @@ const art = (appid) => appid ? [
   `/api/art?appid=${appid}`,
   proxied(`https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/header.jpg`),
 ] : [];
+// Prefer a per-game art override (e.g. Epic games with no Steam appid, like Fortnite), then Steam art.
+// A local "/static/..." override is used as-is; an external URL is proxied through /api/img.
+const artOf = (g) => (g && g.art ? [g.art.startsWith("/") ? g.art : proxied(g.art)] : []).concat(art(g && g.appid));
 
 async function api(path, opts) {
   const r = await fetch(path, opts);
@@ -46,7 +49,7 @@ function imgWithFallback(urls, cls, alt) {
 function gameCard(g) {
   const c = document.createElement("div");
   c.className = "gamecard"; c.title = g.name;
-  c.append(imgWithFallback(art(g.appid), "art", g.name));
+  c.append(imgWithFallback(artOf(g), "art", g.name));
   const n = document.createElement("div"); n.className = "name"; n.textContent = g.name;
   c.append(n);
   c.onclick = () => openGame(g);
