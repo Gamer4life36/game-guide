@@ -98,6 +98,34 @@
     },
     "Memory for Aron": {
       "guide_url": "https://www.whisperofthehouse.com/the-last-caretaker/memory-for-aaron-guide"
+    },
+    "Relight the Way": {
+      "note": "Same task as Signals from Silence, but at Beacon 15: reactivate its Navigational Relay. Charge the relay, then repair the communication array to bring it back online and restore navigation."
+    },
+    "Ascension": {
+      "note": "Endgame finale. Head to Launch Control and ignite the rocket engines to send humanity back to the stars \u2014 the culmination of the whole campaign.",
+      "warning": "This ends the main story \u2014 make sure your Human and every prerequisite are ready before you launch."
+    },
+    "Gift from Above": {
+      "note": "Sail to the Drop Pod marked on your map and open the white capsule. Its contents scale with the quality of the Humans you have sent to the stars.",
+      "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1783560/3f622fa92171171ce34dbfe428f3f54c02e1b454/ss_3f622fa92171171ce34dbfe428f3f54c02e1b454.1920x1080.jpg",
+      "image_caption": "Sail the barge to the drop pod"
+    },
+    "The Last Listener": {
+      "note": "Sail to the Last Listener Station \u2014 a mysterious MOSES facility \u2014 and explore it to uncover its secrets.",
+      "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1783560/3f622fa92171171ce34dbfe428f3f54c02e1b454/ss_3f622fa92171171ce34dbfe428f3f54c02e1b454.1920x1080.jpg",
+      "image_caption": "Sail to the Last Listener Station"
+    },
+    "Mother": {
+      "note": "Search the marked habitat nodes to find what Mother left behind \u2014 story reveals about Anna past and your shared purpose."
+    },
+    "The Isolation": {
+      "note": "Travel to the marked Unlisted Tower (outside normal MOSES routes), climb to the highest point, and use the AM radio at the top."
+    },
+    "Quarantine Stacks": {
+      "note": "Sail to Quarantine Stack Amen marked on your map. Completing it initiates the Codes of Stone quest.",
+      "image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1783560/3f622fa92171171ce34dbfe428f3f54c02e1b454/ss_3f622fa92171171ce34dbfe428f3f54c02e1b454.1920x1080.jpg",
+      "image_caption": "Sail to Quarantine Stack Amen"
     }
   }
 }
