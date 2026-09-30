@@ -1005,8 +1005,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send_file(os.path.join(WEB, name), ctype + "; charset=utf-8")
             if u.path == "/api/games":
                 s = load_settings()
-                return self.send_json({"installed": installed_games(), "recent": s.get("recent", []),
-                                       "model": s.get("model", "")})
+                drop_ids = {str(x) for x in catalog.load_overrides().get("drop_appids", [])}
+                recent = [g for g in s.get("recent", []) if str(g.get("appid", "")) not in drop_ids]
+                installed = [g for g in installed_games() if str(g.get("appid", "")) not in drop_ids]
+                return self.send_json({"installed": installed, "recent": recent, "model": s.get("model", "")})
             if u.path == "/api/store_search":
                 return self.send_json(store_search(q.get("q", "")))
             if u.path == "/api/wikis":

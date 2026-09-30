@@ -270,10 +270,13 @@ def build_from_cache(log=print, limit=1000, min_players=1000):
         ccu = steam_charts()
     except Exception:
         ccu = {}
+    drop_ids = {str(x) for x in load_overrides().get("drop_appids", [])}
     entries = []
     for appid, g in steam.items():
         name = (g.get("name") or "").strip()
         if not name or is_nintendo(name, g.get("developer", ""), g.get("publisher", "")):
+            continue
+        if str(appid) in drop_ids:          # non-games / explicit removals (e.g. Wallpaper Engine, VRChat)
             continue
         owners = owners_mid(g.get("owners"))
         low = owners_low(g.get("owners"))
