@@ -524,6 +524,26 @@ async function showSecretsOverview() {
   }
 }
 
+// Hand-authored per-mission extras (data/mission_notes.json): a warning, a short note and a picture.
+// For missions that just need a tip + image (a travel leg, etc.) rather than a full web walkthrough.
+function renderMissionNotes(pageEl, missionName) {
+  const n = (state.missionNotes || {})[missionName];
+  const wiki = $(".wiki", pageEl);
+  if (!n || !wiki || $(".mnote", wiki)) return;
+  const box = document.createElement("div");
+  box.className = "mnote";
+  let html = "";
+  if (n.warning) html += `<div class="mnote-warn">⚠️ ${esc(n.warning)}</div>`;
+  if (n.note) html += `<p class="mnote-text">${esc(n.note)}</p>`;
+  if (n.image) html += `<figure class="mnote-fig"><img src="${proxied(n.image)}" alt="${esc(n.image_caption || missionName)}">${
+    n.image_caption ? `<figcaption>${esc(n.image_caption)}</figcaption>` : ""}</figure>`;
+  box.innerHTML = html;
+  arrowizeDirections(box);
+  const img = $("img", box);
+  if (img) { img.loading = "eager"; img.onerror = () => (img.style.display = "none"); }
+  wiki.prepend(box);
+}
+
 // Embed THIS mission's own illustrated walkthrough below a sparse wiki quest stub. Uses step_refs to
 // find a guide written for this specific mission (e.g. NoobFeed "How to Complete <mission>",
 // Neoseeker per-mission pages) — so the steps, locations and screenshots belong to the mission you're
@@ -544,28 +564,70 @@ async function enrichMissionDetail(pageEl, p) {
   wiki.append(box);
   const token = (enrichMissionDetail.token = (enrichMissionDetail.token || 0) + 1);
   const dead = () => token !== enrichMissionDetail.token || state.game !== g;
+  const words = (step.toLowerCase().match(/[a-z]{4,}/g) || []);
+  const nameScore = (txt) => words.filter((w) => (txt || "").toLowerCase().includes(w)).length;
   try {
-    const refs = await api(`/api/step_refs?game=${encodeURIComponent(g.name)}&step=${encodeURIComponent(step)}&region=`);
+    // Gather candidate guides for THIS mission from step_refs, then (if thin) a web search.
+    let cands = [];
+    try {
+      const refs = await api(`/api/step_refs?game=${encodeURIComponent(g.name)}&step=${encodeURIComponent(step)}&region=`);
+      cands = (refs || []).map((r) => ({ url: r.open || r.url, name: r.title || "", site: r.site || "" }));
+    } catch {}
     if (dead()) { box.remove(); return; }
-    // Prefer a result whose title actually names this mission (not a generic game guide).
-    const words = (step.toLowerCase().match(/[a-z]{4,}/g) || []);
-    const named = (refs || []).filter((r) => { const t = (r.title || "").toLowerCase(); return words.some((w) => t.includes(w)); });
-    const hit = named[0] || (refs || [])[0];
+    if (!cands.some((c) => nameScore(c.name) >= Math.min(2, words.length))) {
+      try {
+        const w = await api(`/api/search?game=${encodeURIComponent(g.name)}&source=web&appid=${g.appid || ""}&q=${encodeURIComponent(step)}`);
+        cands = cands.concat((w || []).map((r) => ({ url: r.title, name: (r.name || "") + " " + (r.snippet || ""), site: (r.snippet || "").split("·")[0].trim() })));
+      } catch {}
+    }
+    if (dead()) { box.remove(); return; }
+    cands = cands.filter((c) => c.url);
+    cands.sort((a, b) => nameScore(b.name) - nameScore(a.name));
+    const hit = cands[0];
     if (!hit) { box.remove(); return; }
-    let url = hit.open || hit.url;
+    let url = hit.url;
     if (!url.startsWith("web:")) url = "web:" + url;   // web source needs the web: prefix for real content+images
     const wp = await api(`/api/page?game=${encodeURIComponent(g.name)}&appid=${g.appid || ""}&source=web&title=${encodeURIComponent(url)}`);
     if (dead() || !wp || !wp.html) { box.remove(); return; }
     box.innerHTML = `<div class="detail-head">📖 ${esc(step)} — walkthrough <small>— ${esc(hit.site || "guide")}</small></div>${wp.html}`;
-    // Cut the site's "Latest/Related articles" footer — it's thumbnails of OTHER missions, not this one.
+    // If it's a multi-mission page, keep only THIS mission's section (from its heading to the next mission heading).
+    trimToMission(box, step, m);
+    // Cut the site's "Latest/Related articles" footer — thumbnails of OTHER missions, not this one.
     const cut = $$("h2, h3, h4", box).find((h) =>
       /latest articles|related|more (guides|articles)|you may also like|trending|recommended|popular|read (more|next)|next article|other guides/i.test(h.textContent));
     if (cut) { let n = cut; while (n) { const next = n.nextElementSibling; n.remove(); n = next; } }
     arrowizeDirections(box);
     $$("img", box).forEach((img) => { img.loading = "eager"; img.onerror = () => (img.style.display = "none"); });
+    if (box.innerText.trim().length < 120) box.remove();   // nothing useful survived
   } catch {
     box.remove();
   }
+}
+
+// If an embedded guide covers several missions, keep only the current mission's section: from the
+// heading that names this mission up to the heading that names the NEXT mission. Uses Ranges so it
+// works even when the headings are nested inside wrapper elements.
+function trimToMission(box, step, m) {
+  const heads = $$("h1, h2, h3, h4", box);
+  if (heads.length < 3) return;
+  const missionNames = (m.groups || []).flatMap((g) => (g.items || []).map((it) => it.title || it.anchor || it.label)).filter(Boolean);
+  const norm = (s) => (s || "").toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  const stepN = norm(step);
+  const start = heads.find((h) => { const hn = norm(h.textContent); return hn && (hn.includes(stepN) || stepN.includes(hn)); });
+  if (!start) return;                             // this page isn't split by mission — leave as-is
+  let end = null, seenStart = false;
+  for (const h of heads) {
+    if (h === start) { seenStart = true; continue; }
+    if (!seenStart) continue;
+    const hn = norm(h.textContent);
+    if (missionNames.some((nm) => nm !== step && norm(nm).length > 4 && hn.includes(norm(nm)))) { end = h; break; }
+  }
+  const doc = box.ownerDocument, head = $(".detail-head", box);
+  if (end) { const r = doc.createRange(); r.setStartBefore(end); r.setEnd(box, box.childNodes.length); r.deleteContents(); }
+  const r2 = doc.createRange();
+  if (head) r2.setStartAfter(head); else r2.setStart(box, 0);
+  r2.setEndBefore(start);
+  r2.deleteContents();
 }
 
 function renderPage(p, requested) {
@@ -591,6 +653,7 @@ function renderPage(p, requested) {
       Images belong to their respective owners.</div>`;
   arrowizeDirections($(".wiki", pageEl));
   surfaceSecrets($(".wiki", pageEl));
+  renderMissionNotes(pageEl, state.page.open);
   enrichMissionDetail(pageEl, state.page);
   pageEl.scrollTop = 0;
   $("#askPage").onclick = () => { $("#input").value = `Summarise the key things I need to know from the "${p.title}" page.`; $("#input").focus(); autosize(); };
@@ -633,6 +696,7 @@ async function loadMissions(g) {
     const m = await api(`/api/missions?game=${encodeURIComponent(g.name)}&appid=${g.appid || ""}`);
     if (state.game?.name !== g.name) return;
     state.missions = m;
+    try { state.missionNotes = await api(`/api/mission_notes?game=${encodeURIComponent(g.name)}`); } catch { state.missionNotes = {}; }
     renderMissions();
     if (window.MissionRefs) MissionRefs.load(g);
     openFirstMission();  // middle shows details, not a repeat of the mission list

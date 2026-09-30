@@ -874,6 +874,18 @@ def load_art_overrides():
         return {}
 
 
+def load_mission_notes():
+    """Hand-authored per-mission extras keyed by game (lower): {mission: {note, warning, image,
+    image_caption}}. Editable at data/mission_notes.json — for missions that just need a picture and a
+    tip (e.g. a travel leg) rather than a full web walkthrough."""
+    p = os.path.join(catalog.DATA, "mission_notes.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            return {str(k).lower(): v for k, v in json.load(f).items()}
+    except Exception:
+        return {}
+
+
 _qual_cache = {"sig": None, "dropped": set()}
 def dropped_appids():
     """AppIDs the guide index has judged non-qualifying (ok === False): pure-PvP with no campaign,
@@ -1074,6 +1086,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.proxy_image(header_url(q["appid"]))
             if u.path == "/api/missions":
                 return self.send_json(missions_for(q["game"], q.get("appid", "")))
+            if u.path == "/api/mission_notes":
+                return self.send_json(load_mission_notes().get((q.get("game") or "").lower(), {}))
             if u.path == "/api/mission_refs":
                 m = missions_for(q["game"], q.get("appid", ""))
                 hub = m.get("sitename", "") if m.get("source") == "web" else ""

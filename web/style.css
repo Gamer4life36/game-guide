@@ -325,6 +325,15 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--border); cursor: zoom-in; background: var(--card); }
 .secrets-shots img:hover { border-color: #f0c86a; }
 
+/* Hand-authored per-mission note: warning banner + tip + picture. */
+.mnote { margin: 14px 0 18px; }
+.mnote-warn { background: rgba(240,100,90,.12); border: 1px solid #f0645a55; border-left: 3px solid #f0645a;
+  color: #ffb3ad; font-weight: 600; border-radius: 10px; padding: 10px 14px; margin-bottom: 10px; }
+.mnote-text { margin: 8px 0 12px; }
+.mnote-fig { margin: 0; }
+.mnote-fig img { width: 100%; max-width: 640px; height: auto; border-radius: 12px; border: 1px solid var(--border); display: block; }
+.mnote-fig figcaption { color: var(--muted); font-size: 13px; margin-top: 6px; }
+
 /* Detailed illustrated walkthrough embedded under a sparse mission page. */
 .detail-embed { margin: 22px 0 8px; padding: 14px 18px; border: 1px solid var(--border);
   border-left: 3px solid var(--accent); border-radius: 12px; background: rgba(120,140,255,.05); }
