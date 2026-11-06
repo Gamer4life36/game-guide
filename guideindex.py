@@ -46,6 +46,35 @@ def init(server_module):
     os.makedirs(GUIDES, exist_ok=True)
 
 
+CURATED = os.path.join(os.path.dirname(os.path.abspath(__file__)), "curated")
+
+
+def curated_for(game):
+    """Hand-written guides for a game from curated/index.json (shipped with the code, not built)."""
+    try:
+        with open(os.path.join(CURATED, "index.json"), encoding="utf-8") as f:
+            entries = json.load(f).get((game or "").strip().lower()) or []
+    except (OSError, ValueError) as e:
+        print(f"[guideindex] curated/index.json unreadable: {e}")
+        return []
+    return [g for g in entries if isinstance(g, dict) and g.get("id") and g.get("file")]
+
+
+def curated_page(game, gid):
+    entry = next((g for g in curated_for(game) if g["id"] == gid), None)
+    if not entry:
+        raise KeyError(f"No hand-written guide '{gid}' for {game}")
+    path = os.path.normpath(os.path.join(CURATED, entry["file"]))
+    if not path.startswith(CURATED + os.sep):
+        raise KeyError(f"Guide file outside curated/: {entry['file']}")
+    with open(path, encoding="utf-8") as f:
+        raw = f.read()
+    body = srv.clean_html(raw, {"key": "index", "base": ""})
+    heads = [srv.strip_tags(h) for h in re.findall(r"<h2[^>]*>(.*?)</h2>", body, re.S)]
+    return {"title": entry["title"], "html": body, "sections": heads, "url": entry.get("source_url", ""),
+            "edited": "", "curated": True}
+
+
 def key_for(game, appid=""):
     return (f"steam_{appid}" if appid else "g_" + webguides.compact(game))[:80]
 
@@ -245,6 +274,12 @@ def render_index(idx):
     parts.append(f'<p class="covline"><span class="covbadge c{idx["score"] // 25}">{idx["score"]}% coverage</span> '
                  f'Wikis: {_e(wikis)} · Missions: {m.get("count", 0)}'
                  f'{" from " + _e(m["source"]) if m.get("source") else ""}</p>')
+    curated = curated_for(idx.get("game", ""))
+    if curated:
+        cards = "".join(f'<a class="guidecard nothumb" data-t="cur:{_e(g["id"])}" href="#"><span><b>★ {_e(g["title"])}</b>'
+                        f'<small class="stars">Hand-written guide</small><em>{_e(g.get("summary", ""))}</em></span></a>'
+                        for g in curated)
+        parts.append(f'<h2>Puzzles &amp; secrets (hand-written)</h2><div class="guidelist">{cards}</div>')
     if idx.get("mapgenie"):
         cards = "".join(f'<a class="guidecard nothumb" data-t="map:{mp["id"]}|{_e(mp["url"])}" href="#"><span><b>🗺 {_e(mp["title"])}</b>'
                         f'<small class="stars">MapGenie · every marker, searchable</small></span></a>' for mp in idx["mapgenie"])
@@ -291,9 +326,12 @@ def render_markers(map_id, url):
 
 
 def page(src, title):
-    """fetch_page for the Guide index tab. Titles: '' (index), map:<id>|<url>, web:<url>, wiki:<key>:<title>."""
+    """fetch_page for the Guide index tab. Titles: '' (index), map:<id>|<url>, web:<url>, wiki:<key>:<title>,
+    cur:<id> (hand-written guide from curated/)."""
     game, appid = src["game"], src.get("appid", "")
     base = {"url": "", "edited": "", "sections": [], "source": {k: src.get(k) for k in ("key", "sitename", "kind", "base")}}
+    if title.startswith("cur:"):
+        return {**base, **curated_page(game, title[4:])}
     if title.startswith("map:"):
         map_id, _, url = title[4:].partition("|")
         data, body = render_markers(map_id, url)

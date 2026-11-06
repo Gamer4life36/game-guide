@@ -193,6 +193,23 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wiki .gallery img { width: 220px; }
 .wiki figure { margin: 10px 0; }
 .wiki figcaption { color: var(--muted); font-size: 13px; }
+/* Hand-written guides (curated/) */
+.wiki .cg-lead { font-size: 15px; line-height: 1.55; }
+.wiki .cg-muted { color: var(--muted); }
+.wiki .cg-steps li { margin: 6px 0; }
+.wiki .cg-shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
+.wiki .cg-shots.cg-two { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.wiki .cg-shots figure { margin: 0; }
+.wiki .cg-shots img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #0005; cursor: zoom-in; display: block; }
+.wiki .cg-shots figcaption { margin-top: 4px; font-size: 12.5px; }
+.wiki .cg-sym { display: flex; align-items: center; gap: 10px; margin-top: 26px; }
+.wiki .cg-glyph { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px;
+  background: var(--card-hi); color: var(--accent); font-size: 18px; }
+.wiki .cg-spot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin: 10px 0; }
+.wiki .cg-spothead { display: flex; gap: 12px; align-items: flex-start; }
+.wiki .cg-spothead p { margin: 2px 0 0; color: var(--muted); }
+.wiki .cg-pin { flex-shrink: 0; min-width: 32px; height: 32px; padding: 0 6px; border-radius: 8px; background: var(--accent); color: #fff;
+  font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .wiki hr { border: 0; border-top: 1px solid var(--border); }
 .attribution { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--faint); font-size: 12.5px; clear: both; }
 .attribution a { color: var(--muted); cursor: pointer; }

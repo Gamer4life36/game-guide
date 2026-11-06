@@ -68,6 +68,7 @@ Nintendo games are not included.
 | `prebuild.py` | Background guide-index builder |
 | `ci.py`, `publish.py`, `sync.py` | Cloud build, data bundles, and the app-side download |
 | `web/` | Front end (`app.js`, `refs.js`, `browse.js`, `style.css`) |
+| `curated/` | Hand-written guides (puzzles, secrets) listed in `curated/index.json` by game; shown at the top of the Guide index |
 
 Content shown in the app belongs to its wikis, sites and authors. It is fetched live for personal reference.
 

@@ -649,8 +649,10 @@ function renderPage(p, requested) {
       <button class="btn" id="askPage">✦ Ask about this page</button>
     </div>
     <div class="wiki">${p.html}</div>
-    <div class="attribution">Content from <a data-ext="${esc(p.url)}">${esc(src.sitename)}: ${esc(p.title)}</a>${
-      src.kind === "steam" ? " (official store listing)."
+    <div class="attribution">${p.curated
+      ? `Hand-written guide for Game Guide, based on the sources listed above${p.url ? ` (main source: <a data-ext="${esc(p.url)}">open</a>)` : ""}.`
+      : `Content from <a data-ext="${esc(p.url)}">${esc(src.sitename)}: ${esc(p.title)}</a>`}${
+      p.curated ? "" : src.kind === "steam" ? " (official store listing)."
         : ["web", "steamguides"].includes(src.kind) ? ". Text and images belong to the original author."
         : ", licensed under the wiki's Creative Commons license (usually CC BY-SA)."}
       Images belong to their respective owners.</div>`;
@@ -689,6 +691,10 @@ function renderPage(p, requested) {
   if (state.pendingAnchor) { scrollToHeading(state.pendingAnchor); state.pendingAnchor = null; }
   // Broken images: hide quietly.
   $$(".wiki img", pageEl).forEach((img) => (img.onerror = () => (img.style.display = "none")));
+  // Hand-written guides: click a photo to see it full size.
+  $$(".wiki .cg-shots img", pageEl).forEach((img) => {
+    img.onclick = () => showImage(img.src, img.closest("figure")?.querySelector("figcaption")?.textContent || img.alt);
+  });
 }
 
 /* ------------------------------------------------------------ missions sidebar */
