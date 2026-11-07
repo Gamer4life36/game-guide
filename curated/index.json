@@ -1,0 +1,12 @@
+{
+  "_about": "Hand-written guides shown at the top of a game's Guide index. Keys are lower-case game names; each 'file' is an HTML fragment in this folder (cleaned like any page, images go through /api/img).",
+  "arc raiders": [
+    {
+      "id": "pendola-pass-church-door",
+      "title": "Pendola Pass: Old Town church door puzzle",
+      "summary": "Read the 4 symbols on the church wall, then press the matching hidden buttons. All 14 known spots by symbol, with photos.",
+      "file": "arc-raiders/pendola-pass-church-door.html",
+      "source_url": "https://gamerant.com/arc-raiders-old-town-church-symbols-puzzle-solution-pendola-pass/"
+    }
+  ]
+}
