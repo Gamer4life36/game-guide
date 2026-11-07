@@ -692,7 +692,7 @@ function renderPage(p, requested) {
   // Broken images: hide quietly.
   $$(".wiki img", pageEl).forEach((img) => (img.onerror = () => (img.style.display = "none")));
   // Hand-written guides: click a photo to see it full size.
-  $$(".wiki .cg-shots img", pageEl).forEach((img) => {
+  $$(".wiki .cg-shots img, .wiki .cg-big img", pageEl).forEach((img) => {
     img.onclick = () => showImage(img.src, img.closest("figure")?.querySelector("figcaption")?.textContent || img.alt);
   });
 }
@@ -958,6 +958,14 @@ $("#page").addEventListener("click", (e) => {
   e.preventDefault();
   if (a.dataset.t) openPage(state.source, a.dataset.t);
   else if (a.dataset.ext) openExternal(a.dataset.ext);
+  else if (a.dataset.anchor) {   // in-page jump (hand-written guides)
+    const el = document.getElementById(a.dataset.anchor);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("cg-flash");
+      setTimeout(() => el.classList.remove("cg-flash"), 1600);
+    }
+  }
 });
 
 function openExternal(url) { api("/api/open?u=" + encodeURIComponent(url)).catch(() => { }); }

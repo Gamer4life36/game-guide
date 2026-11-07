@@ -60,6 +60,21 @@ def curated_for(game):
     return [g for g in entries if isinstance(g, dict) and g.get("id") and g.get("file")]
 
 
+def _curated_html(raw):
+    """Curated pages are our own files, so they keep their layout (inline styles, ids) instead of going
+    through the wiki cleaner. Still: no scripts or event handlers, remote images go through /api/img,
+    web links open externally, and '#id' links become in-page jumps (data-anchor)."""
+    s = re.sub(r"<(script|style|iframe|object|embed|form)\b.*?</\1\s*>", "", raw, flags=re.S | re.I)
+    s = re.sub(r"<(script|iframe|object|embed|form|link|meta)\b[^>]*>", "", s, flags=re.I)
+    s = re.sub(r"\s+on[a-z]+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", s, flags=re.I)
+    s = re.sub(r"javascript:", "", s, flags=re.I)
+    s = re.sub(r'(<img\b[^>]*?\bsrc=")(https?://[^"]+)"',
+               lambda m: f'{m.group(1)}/api/img?u={urllib.parse.quote(html.unescape(m.group(2)), safe="")}" loading="lazy"', s)
+    s = re.sub(r'<a\b([^>]*?)\bhref="(https?://[^"]+)"', lambda m: f'<a{m.group(1)}data-ext="{m.group(2)}" href="#"', s)
+    s = re.sub(r'<a\b([^>]*?)\bhref="#([A-Za-z][\w-]*)"', lambda m: f'<a{m.group(1)}data-anchor="{m.group(2)}" href="#"', s)
+    return s
+
+
 def curated_page(game, gid):
     entry = next((g for g in curated_for(game) if g["id"] == gid), None)
     if not entry:
@@ -69,7 +84,7 @@ def curated_page(game, gid):
         raise KeyError(f"Guide file outside curated/: {entry['file']}")
     with open(path, encoding="utf-8") as f:
         raw = f.read()
-    body = srv.clean_html(raw, {"key": "index", "base": ""})
+    body = _curated_html(raw)
     heads = [srv.strip_tags(h) for h in re.findall(r"<h2[^>]*>(.*?)</h2>", body, re.S)]
     return {"title": entry["title"], "html": body, "sections": heads, "url": entry.get("source_url", ""),
             "edited": "", "curated": True}

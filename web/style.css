@@ -197,19 +197,44 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .wiki .cg-lead { font-size: 15px; line-height: 1.55; }
 .wiki .cg-muted { color: var(--muted); }
 .wiki .cg-steps li { margin: 6px 0; }
-.wiki .cg-shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 10px; }
-.wiki .cg-shots.cg-two { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-.wiki .cg-shots figure { margin: 0; }
-.wiki .cg-shots img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #0005; cursor: zoom-in; display: block; }
-.wiki .cg-shots figcaption { margin-top: 4px; font-size: 12.5px; }
-.wiki .cg-sym { display: flex; align-items: center; gap: 10px; margin-top: 26px; }
-.wiki .cg-glyph { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px;
-  background: var(--card-hi); color: var(--accent); font-size: 18px; }
-.wiki .cg-spot { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; margin: 10px 0; }
-.wiki .cg-spothead { display: flex; gap: 12px; align-items: flex-start; }
-.wiki .cg-spothead p { margin: 2px 0 0; color: var(--muted); }
-.wiki .cg-pin { flex-shrink: 0; min-width: 32px; height: 32px; padding: 0 6px; border-radius: 8px; background: var(--accent); color: #fff;
-  font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.wiki .cg-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; margin: 12px 0; }
+.wiki .cg-fact { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 13.5px; }
+.wiki .cg-fact b { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.wiki .cg-note { background: #ffb5471a; border: 1px solid #ffb54755; color: #ffd59a; border-radius: 10px; padding: 10px 14px; margin: 12px 0; }
+.wiki .cg-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 10px 0; }
+.wiki .cg-shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; margin-top: 10px; }
+.wiki .cg-shots figure, .wiki .cg-two figure { margin: 0; }
+.wiki .cg-shots .cg-wide { grid-column: span 2; }
+.wiki .cg-shots > figure > img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 8px; background: #0005; cursor: zoom-in; display: block; }
+.wiki .cg-big img { width: 100%; border-radius: 8px; cursor: zoom-in; display: block; }
+.wiki .cg-shots figcaption, .wiki .cg-two figcaption { margin-top: 4px; font-size: 12.5px; }
+/* a crop of a bigger image: the img is positioned/scaled inline, the box clips it */
+.wiki .cg-zoom { position: relative; overflow: hidden; border-radius: 8px; background: #0005; }
+.wiki .cg-zoom img { position: absolute; max-width: none; height: auto; border-radius: 0; cursor: zoom-in; }
+/* map locator: everything outside the ring is dimmed */
+.wiki .cg-map { position: relative; overflow: hidden; border-radius: 8px; aspect-ratio: 16 / 9; }
+.wiki .cg-map img { width: 100%; height: 100%; display: block; border-radius: 0; }
+.wiki .cg-ring { position: absolute; width: 13%; aspect-ratio: 1; transform: translate(-50%, -50%); border: 3px solid #ffd23f;
+  border-radius: 50%; box-shadow: 0 0 0 2000px #000a; pointer-events: none; }
+.wiki .cg-church { position: absolute; width: 23%; height: 33%; transform: translate(-50%, -50%); border: 2px dashed #fffa; border-radius: 50%; pointer-events: none; }
+.wiki .cg-maplabel { position: absolute; transform: translate(-50%, -50%); background: #000c; color: #ffd23f; font-size: 12px; font-weight: 700;
+  padding: 1px 7px; border-radius: 6px; white-space: nowrap; pointer-events: none; }
+.wiki .cg-north { position: absolute; right: 2%; top: 3%; background: #000c; color: #fff; font-weight: 700; font-size: 12px; padding: 2px 7px; border-radius: 6px; }
+.wiki a.cg-hot { position: absolute; transform: translate(-50%, -50%); width: 5.5%; aspect-ratio: 1; border-radius: 50%; border: 2px solid transparent; }
+.wiki a.cg-hot:hover { border-color: #ffd23f; background: #ffd23f33; }
+.wiki .cg-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; margin: 10px 0; }
+.wiki .cg-glyphcard { display: flex; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; }
+.wiki .cg-glyphcard small { display: block; color: var(--muted); }
+.wiki .cg-spot { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin: 14px 0; scroll-margin-top: 12px; transition: box-shadow .3s; }
+.wiki .cg-spot.cg-flash { box-shadow: 0 0 0 3px #ffd23f; }
+.wiki .cg-spothead { display: flex; gap: 12px; align-items: center; }
+.wiki .cg-spothead h3 { margin: 0; }
+.wiki .cg-pin { flex-shrink: 0; min-width: 40px; height: 40px; padding: 0 6px; border-radius: 9px; background: var(--accent); color: #fff;
+  font-weight: 800; font-size: 17px; display: inline-flex; align-items: center; justify-content: center; }
+.wiki .cg-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #ffb54733; color: #ffd59a; margin-left: 6px; }
+.wiki .cg-rows { display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; margin: 10px 0; }
+.wiki .cg-rows dt { font-weight: 700; color: var(--muted); font-size: 13px; }
+.wiki .cg-rows dd { margin: 0; }
 .wiki hr { border: 0; border-top: 1px solid var(--border); }
 .attribution { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--faint); font-size: 12.5px; clear: both; }
 .attribution a { color: var(--muted); cursor: pointer; }
